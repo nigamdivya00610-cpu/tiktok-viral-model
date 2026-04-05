@@ -18,62 +18,23 @@ st.markdown("""
 
 This model simulates how a TikTok video spreads among users in a network.
 
-The spread depends on:
-- 👥 User interaction
-- 🔗 Network connectivity
-- 📈 Sharing behavior
-- ⏳ Loss of interest over time
-
 ### 👤 User Categories:
-- **Viewers (V)** → Users who watch the video  
-- **Sharers (S)** → Users who share the video  
-- **Passive Users (P)** → Users who ignore the video  
+- Viewers (V)
+- Sharers (S)
+- Passive Users (P)
 """)
-
-# -----------------------------
-# MATHEMATICAL MODEL
-# -----------------------------
-st.markdown("""
-## 📐 Mathematical Model
-
-The system is based on the following equations:
-
-- dV/dt = αS − βV  
-- dS/dt = γV − δS  
-- P = N − (V + S)
-
-### Where:
-- α → Growth rate  
-- β → Decay rate  
-- γ → Conversion rate  
-- δ → Sharer fatigue  
-""")
-
-# -----------------------------
-# NETWORK STRUCTURE
-# -----------------------------
-st.markdown("""
-## 🌐 Network Structure
-
-The model uses a random network to represent users.
-
-- Nodes → Users  
-- Edges → Connections  
-
-Higher centrality → faster spread 🚀  
-""")
-
-st.markdown("### 🔧 Adjust Parameters")
 
 # -----------------------------
 # USER INPUT
 # -----------------------------
+st.markdown("### 🔧 Adjust Parameters")
+
 N = st.slider("Total Users (N)", 100, 1000, 500)
 
-alpha = st.slider("Growth Rate (α)", 0.0, 1.0, 0.9)
-beta = st.slider("Decay Rate (β)", 0.0, 1.0, 0.1)
-gamma = st.slider("Viewer → Sharer (γ)", 0.0, 1.0, 0.8)
-delta = st.slider("Sharer Decay (δ)", 0.0, 1.0, 0.5)
+alpha = st.slider("Growth Rate (α)", 0.0, 1.0, 0.6)
+beta = st.slider("Decay Rate (β)", 0.0, 1.0, 0.2)
+gamma = st.slider("Viewer → Sharer (γ)", 0.0, 1.0, 0.3)
+delta = st.slider("Sharer Decay (δ)", 0.0, 1.0, 0.1)
 
 time_steps = st.slider("Time Steps", 10, 200, 100)
 
@@ -89,21 +50,28 @@ dt = 0.1
 # -----------------------------
 if st.button("Run Simulation"):
 
+    # Network
     G = nx.erdos_renyi_graph(N, p)
     centrality = np.mean(list(nx.degree_centrality(G).values()))
 
     st.write("📊 Average Network Centrality:", round(centrality, 4))
 
+    # Initialize P correctly ✅
+    P = N - (V + S)
+
     V_list, S_list, P_list = [], [], []
 
     for t in range(time_steps):
-        dV = (alpha * S * centrality - beta * V) * dt
-        dS = (gamma * V - delta * S) * dt
+
+        # ✅ Improved viral formula (with network + audience)
+        dV = (alpha * S * (P / N) * (1 + centrality) - beta * V) * dt
+        dS = (gamma * V * (P / N) - delta * S) * dt
 
         V += dV
         S += dS
         P = N - (V + S)
 
+        # Avoid negatives
         V = max(V, 0)
         S = max(S, 0)
         P = max(P, 0)
@@ -122,39 +90,39 @@ if st.button("Run Simulation"):
     # -----------------------------
     st.markdown("## 📊 Graphical Results")
 
-    # ✅ COMBINED GRAPH
+    # ✅ Combined Graph (Normalized for better curve)
     fig_comb, ax_comb = plt.subplots()
-    ax_comb.plot(V_list, label="Viewers (V)")
-    ax_comb.plot(S_list, label="Sharers (S)")
-    ax_comb.plot(P_list, label="Passive (P)")
+
+    ax_comb.plot(np.array(V_list)/N, label="Viewers")
+    ax_comb.plot(np.array(S_list)/N, label="Sharers")
+    ax_comb.plot(np.array(P_list)/N, label="Passive")
+
     ax_comb.axvline(x=peak_time, linestyle='--', label="Peak")
 
-    ax_comb.set_title("📊 Combined Graph")
+    ax_comb.set_title("📊 Combined Graph (Normalized)")
     ax_comb.set_xlabel("Time")
-    ax_comb.set_ylabel("Users")
+    ax_comb.set_ylabel("Proportion")
     ax_comb.legend()
     ax_comb.grid(False)
 
     st.pyplot(fig_comb)
 
     # -----------------------------
-    # SEPARATE GRAPHS
+    # Separate Graphs
     # -----------------------------
 
     # Viewers
     fig1, ax1 = plt.subplots()
-    ax1.plot(V_list, label="Viewers (V)")
-    ax1.axvline(x=peak_time, linestyle='--', label="Peak")
-    ax1.set_title("📈 Viewers Over Time")
-    ax1.legend()
+    ax1.plot(V_list)
+    ax1.axvline(x=peak_time, linestyle='--')
+    ax1.set_title("📈 Viewers Curve")
     ax1.grid(False)
     st.pyplot(fig1)
 
     # Sharers
     fig2, ax2 = plt.subplots()
-    ax2.plot(S_list, label="Sharers (S)")
-    ax2.set_title("🔁 Sharers Over Time")
-    ax2.legend()
+    ax2.plot(S_list)
+    ax2.set_title("🔁 Sharers Curve")
     ax2.grid(False)
     st.pyplot(fig2)
 
@@ -162,16 +130,11 @@ if st.button("Run Simulation"):
     # INTERPRETATION
     # -----------------------------
     st.markdown("""
-## 📊 Interpretation of Results
+## 📊 Interpretation
 
-- 📈 Initial growth → video becomes popular  
-- 🔥 Peak → maximum reach  
-- 📉 Decline → interest decreases  
+- Curve rises → viral growth  
+- Peak → maximum reach  
+- Decline → saturation  
 
-### Key Observations:
-- Higher α and γ → faster viral spread  
-- Higher β and δ → faster decline  
-- Strong network → higher peak  
-
-This model explains how TikTok trends grow and fade over time.
-""")
+This matches real TikTok viral behavior.
+""").
