@@ -33,7 +33,34 @@ st.markdown("""
 # HEADER
 # -----------------------------
 st.markdown('<p class="title">📱 TikTok Viral Spread Simulator</p>', unsafe_allow_html=True)
-st.markdown('<p class="subtitle">Growth-Decay Model (Without Network)</p>', unsafe_allow_html=True)
+st.markdown('<p class="subtitle">Growth-Decay Model</p>', unsafe_allow_html=True)
+
+# -----------------------------
+# TOPIC CONTENT
+# -----------------------------
+st.markdown("## 📱 Trending Video Spread on TikTok Modelling")
+
+st.markdown("""
+This project models how a video becomes viral on TikTok using a mathematical approach.
+
+The spread of a video is treated as a dynamic process where users interact with content over time. The model divides the population into three main groups:
+
+- 👀 **Viewers (V):** Users who are watching the video  
+- 🔁 **Sharers (S):** Users who actively share the video  
+- 😶 **Passive Users (P):** Users who have not yet seen the video  
+
+The model is based on a **Growth-Decay mechanism**:
+
+- 📈 **Growth:** Sharers increase the number of viewers by spreading the content  
+- 📉 **Decay:** Users gradually lose interest and stop engaging  
+
+The interaction between these groups determines how fast and how widely a video spreads.
+
+The model also helps identify:
+- 🔥 Peak Views  
+- ⏱ Peak Time  
+- 📊 Engagement behavior  
+""")
 
 # -----------------------------
 # PARAMETERS
@@ -75,7 +102,6 @@ if run:
 
     progress = st.progress(0)
 
-    # Initial values
     V, S = V0, S0
     P = N - (V + S)
 
@@ -83,16 +109,11 @@ if run:
 
     dt = 0.1
 
-    # -----------------------------
-    # LOOP
-    # -----------------------------
     for t in range(time_steps):
 
         progress.progress((t + 1) / time_steps)
 
-        growth_factor = 1  # Removed network effect
-
-        dV = (alpha * S * (P/N) * growth_factor - beta * V) * dt
+        dV = (alpha * S * (P/N) - beta * V) * dt
         dS = (gamma * V * (P/N) - delta * S) * dt
 
         V += dV
@@ -155,34 +176,29 @@ if run:
 
     insights = []
 
-    # Speed of virality
     if peak_time < time_steps * 0.3:
-        insights.append("🚀 The video goes viral very quickly (early peak). Strong initial growth.")
+        insights.append("🚀 The video spreads very quickly and becomes viral early.")
     elif peak_time < time_steps * 0.7:
-        insights.append("📈 The video shows moderate growth before reaching peak.")
+        insights.append("📈 The video shows steady growth before reaching peak.")
     else:
-        insights.append("🐢 Slow growth observed. The video takes time to spread.")
+        insights.append("🐢 The video spreads slowly and takes time to gain attention.")
 
-    # Strength of virality
     if peak_views > 0.6 * N:
-        insights.append("🔥 High virality — majority of users reached.")
+        insights.append("🔥 The video achieves high virality and reaches most users.")
     elif peak_views > 0.3 * N:
-        insights.append("⚡ Moderate virality — decent reach.")
+        insights.append("⚡ The video achieves moderate popularity.")
     else:
-        insights.append("📉 Low virality — limited spread.")
+        insights.append("📉 The video has limited reach and does not go strongly viral.")
 
-    # Growth vs decay
     if alpha > beta:
-        insights.append("💡 Growth rate is higher than decay → sustained engagement.")
+        insights.append("💡 Growth rate is higher than decay, so engagement is sustained.")
     else:
-        insights.append("⛔ Decay dominates → users lose interest quickly.")
+        insights.append("⛔ High decay reduces user interest quickly.")
 
-    # Sharing behavior
     if gamma > delta:
-        insights.append("🔁 Users actively share → boosts virality.")
+        insights.append("🔁 Users actively share the content, boosting spread.")
     else:
-        insights.append("📉 Sharing declines quickly → limits spread.")
+        insights.append("📉 Sharing is limited, reducing virality.")
 
-    # Display insights
     for i in insights:
         st.write(i)
