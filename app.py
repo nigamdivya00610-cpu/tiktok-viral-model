@@ -6,72 +6,102 @@ import networkx as nx
 # -----------------------------
 # TITLE
 # -----------------------------
-st.title("📱 TikTok Viral Spread Model")
+st.title("📱 Advanced TikTok Viral Spread Model")
 
-st.info("This project models how a TikTok video becomes viral using Growth-Decay equations and Network Structure.")
+st.info("Growth-Decay + Network + Influencers + Intervention Strategy")
 
 # -----------------------------
-# PROJECT DESCRIPTION
+# DESCRIPTION
 # -----------------------------
 st.markdown("""
-## 📖 Project Description
-
-This model simulates how a TikTok video spreads among users in a network.
-
 ### 👤 User Categories:
 - Viewers (V)
 - Sharers (S)
 - Passive Users (P)
+
+### 📊 Model Features:
+✔ Growth-Decay Equations  
+✔ Network Structure  
+✔ Influencer Effect  
+✔ Intervention Strategy  
+✔ Peak Detection  
+✔ Multiple Graphs  
 """)
 
 # -----------------------------
-# USER INPUT
+# PARAMETERS
 # -----------------------------
-st.markdown("### 🔧 Adjust Parameters")
+st.markdown("## 🔧 Model Parameters")
 
-N = st.slider("Total Users (N)", 100, 1000, 500)
+N = st.slider("Total Users (N)", 100, 2000, 500)
 
-alpha = st.slider("Growth Rate (α)", 0.0, 1.0, 0.9)
-beta = st.slider("Decay Rate (β)", 0.0, 1.0, 0.1)
-gamma = st.slider("Viewer → Sharer (γ)", 0.0, 1.0, 0.8)
-delta = st.slider("Sharer Decay (δ)", 0.0, 1.0, 0.5)
+alpha = st.slider("Growth Rate (α)", 0.1, 1.0, 0.8)
+beta = st.slider("Decay Rate (β)", 0.01, 0.5, 0.1)
+gamma = st.slider("Viewer → Sharer (γ)", 0.1, 1.0, 0.6)
+delta = st.slider("Sharer Decay (δ)", 0.01, 0.5, 0.2)
 
-time_steps = st.slider("Time Steps", 10, 200, 100)
+p = st.slider("Network Density (p)", 0.001, 0.1, 0.01)
 
-V = st.number_input("Initial Viewers (V0)", 1, N, 10)
-S = st.number_input("Initial Sharers (S0)", 1, N, 5)
+time_steps = st.slider("Time Steps", 50, 300, 150)
 
-p = st.slider("Network Connection Probability", 0.0, 0.1, 0.01)
+V0 = st.number_input("Initial Viewers", 1, N, 10)
+S0 = st.number_input("Initial Sharers", 1, N, 5)
 
-dt = 0.1
+# -----------------------------
+# INTERVENTION STRATEGY
+# -----------------------------
+st.markdown("## 🚀 Intervention Strategy")
+
+boost = st.slider("Algorithm Boost (Promotion)", 1.0, 3.0, 1.0)
+suppression = st.slider("Content Suppression", 0.0, 1.0, 0.0)
 
 # -----------------------------
 # RUN SIMULATION
 # -----------------------------
 if st.button("Run Simulation"):
 
-    # Network
+    # Create network
     G = nx.erdos_renyi_graph(N, p)
-    centrality = np.mean(list(nx.degree_centrality(G).values()))
 
-    st.write("📊 Average Network Centrality:", round(centrality, 4))
+    # Centrality
+    centrality_values = nx.degree_centrality(G)
+    avg_centrality = np.mean(list(centrality_values.values()))
 
-    # Initialize P correctly ✅
+    # Influencers (top 5%)
+    threshold = np.percentile(list(centrality_values.values()), 95)
+    influencers = [node for node, val in centrality_values.items() if val >= threshold]
+    influencer_effect = len(influencers) / N
+
+    st.write("📊 Average Centrality:", round(avg_centrality, 4))
+    st.write("🌟 Number of Influencers:", len(influencers))
+
+    # Initial values
+    V, S = V0, S0
     P = N - (V + S)
 
     V_list, S_list, P_list = [], [], []
 
+    dt = 0.1
+
+    # -----------------------------
+    # SIMULATION LOOP
+    # -----------------------------
     for t in range(time_steps):
 
-        # ✅ Improved viral formula (with network + audience)
-        dV = (alpha * S * (P / N) * (1 + centrality) - beta * V) * dt
-        dS = (gamma * V * (P / N) - delta * S) * dt
+        growth_factor = (1 + avg_centrality + influencer_effect) * boost
 
+        dV = (alpha * S * (P/N) * growth_factor - beta * V) * dt
+        dS = (gamma * V * (P/N) - delta * S) * dt
+
+        # Apply suppression
+        dV *= (1 - suppression)
+
+        # Update values
         V += dV
         S += dS
         P = N - (V + S)
 
-        # Avoid negatives
+        # Avoid negative values
         V = max(V, 0)
         S = max(S, 0)
         P = max(P, 0)
@@ -80,17 +110,19 @@ if st.button("Run Simulation"):
         S_list.append(S)
         P_list.append(P)
 
+    # -----------------------------
+    # PEAK ANALYSIS
+    # -----------------------------
     peak_views = max(V_list)
     peak_time = V_list.index(peak_views)
 
     st.success(f"🔥 Peak Views: {int(peak_views)} at Time Step {peak_time}")
 
     # -----------------------------
-    # GRAPHICAL RESULTS
+    # GRAPH 1: COMBINED GRAPH
     # -----------------------------
-    st.markdown("## 📊 Graphical Results")
+    st.markdown("## 📊 Combined Graph")
 
-    # ✅ Combined Graph (Normalized for better curve)
     fig_comb, ax_comb = plt.subplots()
 
     ax_comb.plot(np.array(V_list)/N, label="Viewers")
@@ -99,7 +131,7 @@ if st.button("Run Simulation"):
 
     ax_comb.axvline(x=peak_time, linestyle='--', label="Peak")
 
-    ax_comb.set_title("📊 Combined Graph (Normalized)")
+    ax_comb.set_title("Normalized Viral Spread")
     ax_comb.set_xlabel("Time")
     ax_comb.set_ylabel("Proportion")
     ax_comb.legend()
@@ -108,23 +140,45 @@ if st.button("Run Simulation"):
     st.pyplot(fig_comb)
 
     # -----------------------------
-    # Separate Graphs
+    # GRAPH 2: VIEWERS
     # -----------------------------
+    st.markdown("## 📈 Viewers Graph")
 
-    # Viewers
-    fig1, ax1 = plt.subplots()
-    ax1.plot(V_list)
-    ax1.axvline(x=peak_time, linestyle='--')
-    ax1.set_title("📈 Viewers Curve")
-    ax1.grid(False)
-    st.pyplot(fig1)
+    fig_v, ax_v = plt.subplots()
+    ax_v.plot(V_list)
+    ax_v.axvline(x=peak_time, linestyle='--')
+    ax_v.set_title("Viewers Over Time")
+    ax_v.set_xlabel("Time")
+    ax_v.set_ylabel("Viewers")
+    ax_v.grid(False)
 
-    # Sharers
-    fig2, ax2 = plt.subplots()
-    ax2.plot(S_list)
-    ax2.set_title("🔁 Sharers Curve")
-    ax2.grid(False)
-    st.pyplot(fig2)
+    st.pyplot(fig_v)
+
+    # -----------------------------
+    # GRAPH 3: SHARERS
+    # -----------------------------
+    st.markdown("## 🔁 Sharers Graph")
+
+    fig_s, ax_s = plt.subplots()
+    ax_s.plot(S_list)
+    ax_s.set_title("Sharers Over Time")
+    ax_s.set_xlabel("Time")
+    ax_s.set_ylabel("Sharers")
+    ax_s.grid(False)
+
+    st.pyplot(fig_s)
+
+    # -----------------------------
+    # SCENARIO COMPARISON
+    # -----------------------------
+    st.markdown("## 🔍 Scenario Insights")
+
+    st.write("""
+    - High Boost → Faster viral growth 🚀  
+    - High Suppression → Reduced spread 📉  
+    - Dense Network → More reach 🌐  
+    - More Influencers → Strong virality ⭐  
+    """)
 
     # -----------------------------
     # INTERPRETATION
@@ -132,9 +186,10 @@ if st.button("Run Simulation"):
     st.markdown("""
 ## 📊 Interpretation
 
-- Curve rises → viral growth  
-- Peak → maximum reach  
-- Decline → saturation  
+- Initial rise → content discovery  
+- Rapid increase → viral phase  
+- Peak → maximum audience reach  
+- Decline → saturation and reduced engagement  
 
-This matches real TikTok viral behavior.
+This behavior closely represents real TikTok viral trends.
 """)
