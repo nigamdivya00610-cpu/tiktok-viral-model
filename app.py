@@ -70,10 +70,10 @@ st.markdown("### 🔧 Adjust Parameters")
 # -----------------------------
 N = st.slider("Total Users (N)", 100, 1000, 500)
 
-alpha = st.slider("Growth Rate (α)", 0.0, 1.0, 0.6)
-beta = st.slider("Decay Rate (β)", 0.0, 1.0, 0.2)
-gamma = st.slider("Viewer → Sharer (γ)", 0.0, 1.0, 0.3)
-delta = st.slider("Sharer Decay (δ)", 0.0, 1.0, 0.1)
+alpha = st.slider("Growth Rate (α)", 0.0, 1.0, 0.9)
+beta = st.slider("Decay Rate (β)", 0.0, 1.0, 0.1)
+gamma = st.slider("Viewer → Sharer (γ)", 0.0, 1.0, 0.8)
+delta = st.slider("Sharer Decay (δ)", 0.0, 1.0, 0.5)
 
 time_steps = st.slider("Time Steps", 10, 200, 100)
 
