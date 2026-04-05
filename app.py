@@ -3,7 +3,66 @@ import numpy as np
 import matplotlib.pyplot as plt
 import networkx as nx
 
+# -----------------------------
+# TITLE
+# -----------------------------
 st.title("📱 TikTok Viral Spread Model")
+
+st.info("This project models how a TikTok video becomes viral using Growth-Decay equations and Network Structure.")
+
+# -----------------------------
+# PROJECT DESCRIPTION
+# -----------------------------
+st.markdown("""
+## 📖 Project Description
+
+This model simulates how a TikTok video spreads among users in a network.
+
+The spread depends on:
+- 👥 User interaction
+- 🔗 Network connectivity
+- 📈 Sharing behavior
+- ⏳ Loss of interest over time
+
+### 👤 User Categories:
+- **Viewers (V)** → Users who watch the video  
+- **Sharers (S)** → Users who share the video  
+- **Passive Users (P)** → Users who ignore the video  
+""")
+
+# -----------------------------
+# MATHEMATICAL MODEL
+# -----------------------------
+st.markdown("""
+## 📐 Mathematical Model
+
+The system is based on the following equations:
+
+- dV/dt = αS − βV  
+- dS/dt = γV − δS  
+- P = N − (V + S)
+
+### Where:
+- α → Growth rate (how fast video spreads)  
+- β → Decay rate (loss of interest)  
+- γ → Conversion rate (viewer → sharer)  
+- δ → Sharer fatigue  
+""")
+
+# -----------------------------
+# NETWORK STRUCTURE
+# -----------------------------
+st.markdown("""
+## 🌐 Network Structure
+
+The model uses a random network to represent users.
+
+- Nodes → Users  
+- Edges → Connections  
+
+We calculate **centrality** to measure influence:
+- Higher centrality → faster spread 🚀  
+""")
 
 st.markdown("### 🔧 Adjust Parameters")
 
@@ -73,7 +132,7 @@ if st.button("Run Simulation"):
     # -----------------------------
     st.markdown("## 📊 Graphical Results")
 
-    # 1️⃣ Viewers Graph
+    # Viewers Graph
     fig1, ax1 = plt.subplots()
     ax1.plot(V_list, label="Viewers (V)")
     ax1.axvline(x=peak_time, linestyle='--', label="Peak")
@@ -82,10 +141,9 @@ if st.button("Run Simulation"):
     ax1.set_ylabel("Users")
     ax1.legend()
     ax1.grid(False)
-
     st.pyplot(fig1)
 
-    # 2️⃣ Sharers Graph
+    # Sharers Graph
     fig2, ax2 = plt.subplots()
     ax2.plot(S_list, label="Sharers (S)")
     ax2.set_title("🔁 Sharers Over Time")
@@ -93,10 +151,9 @@ if st.button("Run Simulation"):
     ax2.set_ylabel("Users")
     ax2.legend()
     ax2.grid(False)
-
     st.pyplot(fig2)
 
-    # 3️⃣ Passive Users Graph
+    # Passive Graph
     fig3, ax3 = plt.subplots()
     ax3.plot(P_list, label="Passive Users (P)")
     ax3.set_title("😴 Passive Users Over Time")
@@ -104,5 +161,22 @@ if st.button("Run Simulation"):
     ax3.set_ylabel("Users")
     ax3.legend()
     ax3.grid(False)
-
     st.pyplot(fig3)
+
+    # -----------------------------
+    # INTERPRETATION
+    # -----------------------------
+    st.markdown("""
+## 📊 Interpretation of Results
+
+- 📈 Initial growth → video becomes popular  
+- 🔥 Peak → maximum reach  
+- 📉 Decline → interest decreases  
+
+### Key Observations:
+- Higher α and γ → faster viral spread  
+- Higher β and δ → faster decline  
+- Strong network → higher peak  
+
+This model explains how TikTok trends grow and fade over time.
+""")
