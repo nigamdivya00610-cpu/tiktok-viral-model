@@ -1,4 +1,5 @@
 import streamlit as st
+st.set_page_config(layout="wide") 
 import numpy as np
 import matplotlib.pyplot as plt
 import networkx as nx
