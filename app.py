@@ -3,70 +3,81 @@ import numpy as np
 import matplotlib.pyplot as plt
 import networkx as nx
 
-# =============================
-# 📱 TITLE
-# =============================
-st.title("📱 TikTok Viral Spread Modelling")
+# -----------------------------
+# TITLE
+# -----------------------------
+st.title("📱 TikTok Viral Spread Model")
 
-st.info("Growth-Decay Model + Network Structure + Influencers")
+st.info("Mathematical Modelling using Growth-Decay + Network + Influencers")
 
-# =============================
+# -----------------------------
 # 📌 PROBLEM DEFINITION
-# =============================
+# -----------------------------
 st.markdown("""
 ## 📌 Problem Definition
-This project models how a TikTok video spreads and becomes viral in a social network.
 
-Objectives:
-- Study how users interact and spread content
+This project models how a TikTok video goes viral in a social network.
+
+We aim to:
+- Understand how content spreads among users
 - Identify peak viral time
-- Understand influencer impact
-- Analyze spread and decline behavior
+- Analyze the role of influencers and network structure
+- Study how promotion or suppression affects reach
 """)
 
-# =============================
+# -----------------------------
 # 📘 MODEL DESCRIPTION
-# =============================
+# -----------------------------
 st.markdown("""
 ## 📘 Model Description
 
-### User Categories:
-- **Viewers (V)** – Users watching the video  
-- **Sharers (S)** – Users sharing the video  
-- **Passive (P)** – Users who haven’t seen it  
+### 👤 User Categories:
+- **Viewers (V):** Users who watch the video
+- **Sharers (S):** Users who share the video
+- **Passive Users (P):** Users who have not seen the video
 
-### Network:
+### 🌐 Network:
 Users are connected through a random network.  
-Highly connected users act as influencers.
+Highly connected users (influencers) increase spread.
 """)
 
-# =============================
+# -----------------------------
 # 🧮 MATHEMATICAL MODEL
-# =============================
+# -----------------------------
 st.markdown("""
-## 🧮 Mathematical Model
+## 🧮 Mathematical Formulation
 
-dV/dt = α * S * (P/N) * (1 + Centrality + Influencers) − β * V  
+The spread is modeled using differential equations:
 
-dS/dt = γ * V * (P/N) − δ * S  
+dV/dt = α * S * (P/N) * (1 + Centrality + Influencers) - β * V  
 
-P = N − (V + S)
+dS/dt = γ * V * (P/N) - δ * S  
+
+P = N - (V + S)
+
+Where:
+- α = Growth rate
+- β = Viewer decay
+- γ = Conversion to sharers
+- δ = Sharer decay
 """)
 
-# =============================
+# -----------------------------
 # ⚙️ ASSUMPTIONS
-# =============================
+# -----------------------------
 st.markdown("""
 ## ⚙️ Assumptions
-- Total users remain constant  
-- Spread occurs via network connections  
-- Influencers accelerate spread  
-- Users lose interest over time (decay)  
+
+- Total population is constant
+- Users interact through a network
+- Influencers accelerate spread
+- Passive users become viewers via sharers
+- Decay represents loss of interest over time
 """)
 
-# =============================
-# 🔧 PARAMETERS
-# =============================
+# -----------------------------
+# PARAMETERS
+# -----------------------------
 st.markdown("## 🔧 Model Parameters")
 
 N = st.slider("Total Users (N)", 100, 2000, 500)
@@ -82,24 +93,23 @@ time_steps = st.slider("Time Steps", 50, 300, 150)
 V0 = st.number_input("Initial Viewers", 1, N, 10)
 S0 = st.number_input("Initial Sharers", 1, N, 5)
 
-# =============================
-# ▶ RUN SIMULATION
-# =============================
+# -----------------------------
+# RUN SIMULATION
+# -----------------------------
 if st.button("Run Simulation"):
 
-    # 🌐 Create Network
+    # Create network
     G = nx.erdos_renyi_graph(N, p)
 
-    # 📊 Centrality
+    # Centrality & Influencers
     centrality = nx.degree_centrality(G)
     avg_centrality = np.mean(list(centrality.values()))
 
-    # ⭐ Influencers (Top 5%)
     threshold = np.percentile(list(centrality.values()), 95)
-    influencers = [node for node, val in centrality.items() if val >= threshold]
+    influencers = [n for n, v in centrality.items() if v >= threshold]
     influencer_effect = len(influencers) / N
 
-    st.write("📊 Average Centrality:", round(avg_centrality, 4))
+    st.write("📊 Avg Centrality:", round(avg_centrality, 4))
     st.write("🌟 Influencers:", len(influencers))
 
     # Initial values
@@ -110,19 +120,21 @@ if st.button("Run Simulation"):
 
     dt = 0.1
 
-    # 🔁 Simulation Loop
+    # -----------------------------
+    # SIMULATION LOOP
+    # -----------------------------
     for t in range(time_steps):
 
-        growth = (1 + avg_centrality + influencer_effect)
+        growth_factor = (1 + avg_centrality + influencer_effect)
 
-        dV = (alpha * S * (P/N) * growth - beta * V) * dt
+        dV = (alpha * S * (P/N) * growth_factor - beta * V) * dt
         dS = (gamma * V * (P/N) - delta * S) * dt
 
         V += dV
         S += dS
         P = N - (V + S)
 
-        # Prevent negatives
+        # Avoid negative values
         V = max(V, 0)
         S = max(S, 0)
         P = max(P, 0)
@@ -131,23 +143,16 @@ if st.button("Run Simulation"):
         S_list.append(S)
         P_list.append(P)
 
-    # 🔥 Peak Detection
+    # -----------------------------
+    # PEAK DETECTION
+    # -----------------------------
     peak_views = max(V_list)
     peak_time = V_list.index(peak_views)
 
     st.success(f"🔥 Peak Views: {int(peak_views)} at Time {peak_time}")
 
     # =============================
-    # 🌐 NETWORK GRAPH
-    # =============================
-    st.markdown("## 🌐 Network Structure")
-
-    fig_net = plt.figure()
-    nx.draw(G, node_size=10)
-    st.pyplot(fig_net)
-
-    # =============================
-    # 📊 COMBINED GRAPH
+    # 📊 GRAPH 1: COMBINED
     # =============================
     st.markdown("## 📊 Combined Graph")
 
@@ -155,7 +160,6 @@ if st.button("Run Simulation"):
     ax1.plot(np.array(V_list)/N, label="Viewers")
     ax1.plot(np.array(S_list)/N, label="Sharers")
     ax1.plot(np.array(P_list)/N, label="Passive")
-
     ax1.axvline(x=peak_time, linestyle='--', label="Peak")
 
     ax1.set_title("Viral Spread")
@@ -194,25 +198,19 @@ if st.button("Run Simulation"):
 
     st.pyplot(fig3)
 
-# =============================
+# -----------------------------
 # 📊 INTERPRETATION
-# =============================
+# -----------------------------
 st.markdown("""
-## 📊 Interpretation
+## 📊 Interpretation & Real-World Use
 
-- Initial phase → slow growth  
-- Viral phase → rapid increase  
-- Peak → maximum reach  
-- Decline → saturation  
+- Slow start → initial exposure  
+- Rapid growth → viral phase  
+- Peak → maximum popularity  
+- Decline → audience saturation  
 
-## ✅ Validation
-The model follows real-world TikTok trends:
-- Content spreads quickly due to sharing  
-- Influencers increase reach  
-- Interest decreases over time  
-
-## 🌍 Real-World Use
-- Digital marketing strategies  
-- Predict viral content  
-- Social media analysis  
+### 🌍 Real-World Applicability:
+- Helps understand TikTok algorithm behavior  
+- Useful for digital marketing strategies  
+- Can predict viral trends  
 """)
