@@ -3,124 +3,141 @@ import numpy as np
 import matplotlib.pyplot as plt
 import networkx as nx
 
-st.title("📈 TikTok Viral Spread Simulation")
+st.title("📊 TikTok Viral Spread Model (Improved)")
 
 # -----------------------------
-# USER INPUTS
+# INPUT SECTION
 # -----------------------------
-st.sidebar.header("Model Parameters")
+st.sidebar.header("🔧 Parameters")
 
 N = st.sidebar.number_input("Total Users (N)", value=1000)
-beta = st.sidebar.slider("β (Viewer → Sharer rate)", 0.0, 1.0, 0.3)
-gamma = st.sidebar.slider("γ (Viewer → Passive rate)", 0.0, 1.0, 0.2)
-delta = st.sidebar.slider("δ (Decay rate)", 0.0, 1.0, 0.1)
-k = st.sidebar.slider("k (Network Influence)", 0.0, 2.0, 1.0)
+beta = st.sidebar.slider("β (Viewer → Sharer)", 0.0, 1.0, 0.3)
+gamma = st.sidebar.slider("γ (Viewer → Passive)", 0.0, 1.0, 0.2)
+delta = st.sidebar.slider("δ (Decay)", 0.0, 1.0, 0.1)
+k = st.sidebar.slider("k (Network Influence)", 0.1, 2.0, 1.0)
 
-# Initial values
 V0 = st.sidebar.number_input("Initial Viewers", value=10)
 S0 = st.sidebar.number_input("Initial Sharers", value=5)
 P0 = st.sidebar.number_input("Initial Passive", value=0)
 
-T = st.sidebar.slider("Time Steps", 10, 200, 100)
+T = st.sidebar.slider("Time Steps", 20, 300, 100)
+
+# Run Button
+run = st.button("▶ Run Simulation")
 
 # -----------------------------
-# NETWORK STRUCTURE
+# FUNCTION: SIMULATION
 # -----------------------------
-st.subheader("🌐 Network Structure")
+def simulate():
+    # Create network
+    G = nx.erdos_renyi_graph(N, 0.01)
 
-G = nx.erdos_renyi_graph(N, 0.01)
+    # Centrality
+    centrality = nx.degree_centrality(G)
+    avg_centrality = np.mean(list(centrality.values()))
 
-# Centrality
-centrality = nx.degree_centrality(G)
-avg_centrality = np.mean(list(centrality.values()))
+    # Effective influence
+    k_eff = k * (1 + avg_centrality)
 
-st.write(f"Average Network Centrality: {avg_centrality:.4f}")
+    # Initialize arrays
+    V = np.zeros(T)
+    S = np.zeros(T)
+    P = np.zeros(T)
 
-# Modify influence using centrality
-k_effective = k * (1 + avg_centrality)
+    V[0], S[0], P[0] = V0, S0, P0
 
-# -----------------------------
-# SIMULATION
-# -----------------------------
-V = np.zeros(T)
-S = np.zeros(T)
-P = np.zeros(T)
+    dt = 0.1   # smaller step → smoother graph
 
-V[0], S[0], P[0] = V0, S0, P0
+    # Simulation loop
+    for t in range(1, T):
+        dV = k_eff * S[t-1] * ((N - V[t-1]) / N) - delta * V[t-1]
+        dS = beta * V[t-1] - gamma * S[t-1]
+        dP = gamma * V[t-1]
 
-dt = 1
+        V[t] = V[t-1] + dV * dt
+        S[t] = S[t-1] + dS * dt
+        P[t] = P[t-1] + dP * dt
 
-for t in range(1, T):
-    dV = k_effective * S[t-1] * ((N - V[t-1]) / N) - delta * V[t-1]
-    dS = beta * V[t-1] - gamma * S[t-1]
-    dP = gamma * V[t-1]
+        # Prevent negative values
+        V[t] = max(V[t], 0)
+        S[t] = max(S[t], 0)
+        P[t] = max(P[t], 0)
 
-    V[t] = max(V[t-1] + dV * dt, 0)
-    S[t] = max(S[t-1] + dS * dt, 0)
-    P[t] = max(P[t-1] + dP * dt, 0)
-
-# -----------------------------
-# PEAK ANALYSIS
-# -----------------------------
-peak_views = np.max(V)
-peak_time = np.argmax(V)
-
-st.write(f"📊 Peak Views: {peak_views:.2f} at time {peak_time}")
+    return V, S, P, avg_centrality
 
 # -----------------------------
-# PLOTS
+# RUN SIMULATION
 # -----------------------------
-st.subheader("📉 Graphs")
+if run:
+    V, S, P, C = simulate()
 
-# Graph 1: Viewers
-fig1, ax1 = plt.subplots()
-ax1.plot(V)
-ax1.set_title("Viewers Over Time")
-st.pyplot(fig1)
+    # Peak Analysis
+    peak_views = np.max(V)
+    peak_time = np.argmax(V)
 
-# Graph 2: Sharers + Passive
-fig2, ax2 = plt.subplots()
-ax2.plot(S, label="Sharers")
-ax2.plot(P, label="Passive")
-ax2.legend()
-ax2.set_title("Sharers and Passive Users")
-st.pyplot(fig2)
+    st.subheader("📈 Results")
+    st.write(f"Peak Views: {peak_views:.2f}")
+    st.write(f"Peak Time: {peak_time}")
+    st.write(f"Network Centrality: {C:.4f}")
 
-# Graph 3: Combined
-fig3, ax3 = plt.subplots()
-ax3.plot(V, label="Viewers")
-ax3.plot(S, label="Sharers")
-ax3.plot(P, label="Passive")
-ax3.legend()
-ax3.set_title("Combined Dynamics")
-st.pyplot(fig3)
+    # -----------------------------
+    # GRAPHS (SMALL SIZE)
+    # -----------------------------
+    st.subheader("📉 Graphs")
 
-# -----------------------------
-# INTERPRETATION
-# -----------------------------
-st.subheader("📌 Interpretation")
+    # Graph 1
+    fig1, ax1 = plt.subplots(figsize=(4,3))
+    ax1.plot(V)
+    ax1.set_title("Viewers")
+    st.pyplot(fig1)
 
-if peak_views > N * 0.6:
-    st.write("🔥 The video went highly viral reaching a large portion of the network.")
-elif peak_views > N * 0.3:
-    st.write("📈 Moderate virality observed with significant spread.")
-else:
-    st.write("📉 Low virality — content did not spread widely.")
+    # Graph 2
+    fig2, ax2 = plt.subplots(figsize=(4,3))
+    ax2.plot(S, label="Sharers")
+    ax2.plot(P, label="Passive")
+    ax2.legend()
+    ax2.set_title("Sharers & Passive")
+    st.pyplot(fig2)
 
-if delta > 0.3:
-    st.write("⚠️ High decay rate reduced long-term engagement.")
-    
-if beta > gamma:
-    st.write("🚀 More viewers are converting into sharers → strong viral growth.")
+    # Graph 3 (Combined)
+    fig3, ax3 = plt.subplots(figsize=(4,3))
+    ax3.plot(V, label="Viewers")
+    ax3.plot(S, label="Sharers")
+    ax3.plot(P, label="Passive")
+    ax3.legend()
+    ax3.set_title("Combined")
+    st.pyplot(fig3)
 
-if avg_centrality > 0.01:
-    st.write("🌐 Strong network connectivity boosted spread via influencers.")
+    # -----------------------------
+    # INTERPRETATION
+    # -----------------------------
+    st.subheader("📌 Interpretation")
 
-# -----------------------------
-# NETWORK VISUALIZATION
-# -----------------------------
-st.subheader("🕸️ Network Graph")
+    if peak_views > 0.7 * N:
+        st.write("🔥 Highly viral: Video spreads across most of the network.")
+    elif peak_views > 0.4 * N:
+        st.write("📈 Moderate virality: Good engagement but limited reach.")
+    else:
+        st.write("📉 Low virality: Content fails to spread widely.")
 
-fig_net, ax_net = plt.subplots()
-nx.draw(G, node_size=10, ax=ax_net)
-st.pyplot(fig_net)
+    if beta > gamma:
+        st.write("🚀 Strong sharing behavior driving growth.")
+    else:
+        st.write("⚠️ Users are becoming passive quickly.")
+
+    if delta > 0.3:
+        st.write("⏳ High decay → trend dies quickly.")
+
+    if C > 0.01:
+        st.write("🌐 Influencers (central nodes) significantly boost spread.")
+
+    # -----------------------------
+    # NETWORK VISUAL (SMALL)
+    # -----------------------------
+    st.subheader("🕸️ Network Structure")
+
+    G = nx.erdos_renyi_graph(100, 0.05)
+
+    fig_net, ax_net = plt.subplots(figsize=(4,3))
+    nx.draw(G, node_size=20, ax=ax_net)
+    st.pyplot(fig_net)
