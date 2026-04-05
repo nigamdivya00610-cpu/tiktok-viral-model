@@ -100,19 +100,19 @@ if run:
     # -----------------------------
     st.subheader("📉 Graphs")
     
-    fig1, ax1 = plt.subplots(figsize=(6,4_)
+    fig1, ax1 = plt.subplots(figsize=(6,4))
     ax1.plot(V)
     ax1.set_title("Viewers")
     st.pyplot(fig1)
 
-    fig2, ax2 = plt.subplots(figsize=(6,4_)
+    fig2, ax2 = plt.subplots(figsize=(6,4))
     ax2.plot(S, label="Sharers")
     ax2.plot(P, label="Passive")
     ax2.legend()
     ax2.set_title("Sharers & Passive")
     st.pyplot(fig2)
 
-    fig3, ax3 = plt.subplots(figsize=(6,4_)
+    fig3, ax3 = plt.subplots(figsize=(6,4))
     ax3.plot(V, label="Viewers")
     ax3.plot(S, label="Sharers")
     ax3.plot(P, label="Passive")
