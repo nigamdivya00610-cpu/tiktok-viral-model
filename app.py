@@ -126,27 +126,20 @@ if run:
 
     g1, g2 = st.columns(2)
 
+    # Viewers Graph
     with g1:
-        fig1, ax1 = plt.subplots()
-        ax1.plot(np.array(V_list)/N, label="Viewers", color='red')
-        ax1.plot(np.array(S_list)/N, label="Sharers", color='blue')
-        ax1.plot(np.array(P_list)/N, label="Passive", color='green')
-        ax1.axvline(x=peak_time, linestyle='--')
-        ax1.set_title("Viral Spread (Normalized)")
-        ax1.legend()
-        st.pyplot(fig1)
-
-    with g2:
         fig2, ax2 = plt.subplots()
         ax2.plot(V_list, color='red')
         ax2.axvline(x=peak_time, linestyle='--')
         ax2.set_title("Viewers Over Time")
         st.pyplot(fig2)
 
-    fig3, ax3 = plt.subplots()
-    ax3.plot(S_list, color='blue')
-    ax3.set_title("Sharers Over Time")
-    st.pyplot(fig3)
+    # Sharers Graph
+    with g2:
+        fig3, ax3 = plt.subplots()
+        ax3.plot(S_list, color='blue')
+        ax3.set_title("Sharers Over Time")
+        st.pyplot(fig3)
 
     # -----------------------------
     # FINAL COMBINED GRAPH
@@ -167,7 +160,7 @@ if run:
     # -----------------------------
     # INTERPRETATION
     # -----------------------------
-    st.markdown("## **📘 Smart Interpretation**")
+    st.markdown("**Interpretation**")
 
     insights = []
 
