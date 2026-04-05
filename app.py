@@ -2,83 +2,64 @@ import streamlit as st
 import networkx as nx
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 
-# --- Simulation Logic ---
-def run_viral_simulation(n_nodes, m_edges, spread_prob, decay_rate, initial_seeds):
-    # 1. Create a Scale-Free Network (realistic for social media)
-    G = nx.barabasi_albert_graph(n_nodes, m_edges)
-    
-    # Calculate Centrality (used for intervention strategy)
+st.title("TikTok Growth-Decay Network Model")
+
+# Sidebar Inputs
+st.sidebar.header("Model Parameters")
+r = st.sidebar.slider("Virality Rate (r)", 0.1, 1.0, 0.4)
+delta = st.sidebar.slider("Decay Rate (δ)", 0.05, 0.5, 0.2)
+n_users = st.sidebar.slider("Network Size", 100, 1000, 500)
+
+def simulate_viral_logic(n, r, delta):
+    # 1. Create Scale-Free Network (Network Structure)
+    G = nx.barabasi_albert_graph(n, 3)
     centrality = nx.degree_centrality(G)
     
-    # State mapping: 0 = Passive, 1 = Viewer, 2 = Sharer
-    status = np.zeros(n_nodes)
+    # 2. Initial State: Start with top 3 influencers
+    seeds = sorted(centrality, key=centrality.get, reverse=True)[:3]
+    active_viewers = np.zeros(n)
+    active_viewers[seeds] = 1.0
     
-    # Intervention: Seed the most central nodes (influencers)
-    top_nodes = sorted(centrality, key=centrality.get, reverse=True)
-    for i in range(initial_seeds):
-        status[top_nodes[i]] = 1
+    results = []
+    
+    # 3. Time-Stepping (Euler Method for dV/dt)
+    for t in range(50):
+        current_total = np.sum(active_viewers)
         
-    history = []
-    
-    for t in range(50): # 50 time steps
-        new_status = status.copy()
-        for node in G.nodes():
-            if status[node] == 1: # Current Viewer
-                # Growth: Try to spread to neighbors
-                for neighbor in G.neighbors(node):
-                    if status[neighbor] == 0 and np.random.random() < spread_prob:
-                        new_status[neighbor] = 1
-                
-                # Internal Decay: Move from Viewer to Passive (boredom)
-                if np.random.random() < decay_rate:
-                    new_status[node] = 2 # Using 2 as 'Stopped watching/Passive'
-            
-        status = new_status
-        history.append({
-            "Step": t,
-            "Active Viewers": np.sum(status == 1),
-            "Reached Total": np.sum(status > 0)
+        # Calculate Network-Weighted Growth
+        # High centrality sharers push the video to more 'Passive' nodes
+        new_viewers = active_viewers.copy()
+        
+        for i in G.nodes():
+            if active_viewers[i] > 0.1: # If node is an active sharer
+                neighbors = list(G.neighbors(i))
+                for neighbor in neighbors:
+                    # Growth Formula: Rate adjusted by node importance
+                    growth = r * centrality[i] * (1 - current_total/n)
+                    # Decay Formula: Natural loss of interest
+                    decay = delta * active_viewers[i]
+                    
+                    new_viewers[neighbor] += growth
+                    new_viewers[i] -= decay
+        
+        # Clip values between 0 and 1 (probability/intensity)
+        active_viewers = np.clip(new_viewers, 0, 1)
+        
+        results.append({
+            "Time": t,
+            "Viral Intensity": np.sum(active_viewers),
+            "Growth Rate": r * (1 - np.sum(active_viewers)/n)
         })
         
-    return pd.DataFrame(history), G, centrality
+    return pd.DataFrame(results)
 
-# --- Streamlit UI ---
-st.set_page_config(page_title="TikTok Viral Model", layout="wide")
-st.title("📈 TikTok Viral Spread Simulator")
+# Execution
+data = simulate_viral_logic(n_users, r, delta)
 
-with st.sidebar:
-    st.header("Simulation Parameters")
-    n_nodes = st.slider("Total Users", 100, 1000, 500)
-    spread_prob = st.slider("Virality (Spread Prob)", 0.01, 0.20, 0.05)
-    decay_rate = st.slider("Decay (Boredom Rate)", 0.01, 0.20, 0.08)
-    initial_seeds = st.number_input("Initial Influencer Seeds", 1, 10, 3)
+# Visualization
+st.subheader("The Viral Curve: $dV/dt = Growth - Decay$")
+st.line_chart(data.set_index("Time")[["Viral Intensity"]])
 
-if st.button("Run Viral Simulation"):
-    df, G, centrality = run_viral_simulation(n_nodes, 2, spread_prob, decay_rate, initial_seeds)
-    
-    col1, col2 = st.columns([2, 1])
-    
-    with col1:
-        st.subheader("Viral Growth-Decay Curve")
-        st.line_chart(df.set_index("Step"))
-        
-        peak_val = df["Active Viewers"].max()
-        st.metric("Peak Concurrent Viewers", f"{int(peak_val)}")
-        
-    with col2:
-        st.subheader("Network Metrics")
-        avg_cent = sum(centrality.values()) / len(centrality)
-        st.write(f"**Network Density:** {nx.density(G):.4f}")
-        st.write(f"**Avg Centrality:** {avg_cent:.4f}")
-        
-        st.info("The simulation automatically targets nodes with the highest **Degree Centrality** to model an effective intervention strategy.")
-
-    # Visualization of the Network
-    st.subheader("Final Social Graph Snapshot")
-    fig, ax = plt.subplots(figsize=(10, 6))
-    pos = nx.spring_layout(G, k=0.15)
-    nx.draw_networkx_nodes(G, pos, node_size=20, node_color='teal', alpha=0.7)
-    nx.draw_networkx_edges(G, pos, alpha=0.1)
-    st.pyplot(fig)
+st.write(f"**Peak Reach:** {data['Viral Intensity'].max():.2f} users")
+st.latex(r"\frac{dV}{dt} = rV(1 - \frac{V}{K}) - \delta V")
