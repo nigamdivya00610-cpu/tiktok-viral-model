@@ -137,4 +137,4 @@ if st.button("Run Simulation"):
 - Decline → saturation  
 
 This matches real TikTok viral behavior.
-""").
+""")
