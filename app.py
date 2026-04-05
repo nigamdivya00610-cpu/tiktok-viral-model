@@ -16,18 +16,18 @@ st.info("This model combines Growth-Decay equations with Network Theory to simul
 st.markdown("""
 ## 📖 Project Description
 
-This project models how a TikTok video goes viral using **mathematical modelling and network theory**.
+This project models how a TikTok video spreads in a social network.
 
-The spread of a video depends on:
-- 👥 User interactions
-- 🔗 Network connections
-- 📈 Sharing behavior
-- ⏳ Loss of interest over time
+The viral spread depends on:
+- 👥 User interaction  
+- 🔗 Network connections  
+- 📈 Sharing behavior  
+- ⏳ Decay of interest  
 
 ### User Categories:
-- **Viewers (V)** – Users who watch the video  
-- **Sharers (S)** – Users who share the video  
-- **Passive Users (P)** – Users who ignore the video  
+- **Viewers (V)** → Users who watch the video  
+- **Sharers (S)** → Users who share the video  
+- **Passive Users (P)** → Users who ignore the video  
 """)
 
 # -----------------------------
@@ -36,16 +36,16 @@ The spread of a video depends on:
 st.markdown("""
 ## 📐 Mathematical Model
 
-The system is based on growth-decay equations:
+The system is defined using differential equations:
 
 - dV/dt = αS − βV  
 - dS/dt = γV − δS  
 - P = N − (V + S)
 
 Where:
-- α → Growth rate (sharing effect)  
-- β → Decay rate (loss of interest)  
-- γ → Viewer to sharer conversion  
+- α → Growth rate  
+- β → Decay rate  
+- γ → Conversion to sharer  
 - δ → Sharer fatigue  
 """)
 
@@ -55,15 +55,13 @@ Where:
 st.markdown("""
 ## 🌐 Network Structure
 
-The model uses a **random network** to simulate social connections.
+We model the system using a random network:
 
 - Nodes → Users  
 - Edges → Connections  
 
-Higher connectivity increases the spread of the video.
-
-We also use **centrality** to measure influence:
-- High centrality → faster viral spread 🚀  
+Network centrality represents influence:
+- Higher centrality → faster viral spread 🚀  
 """)
 
 # -----------------------------
@@ -129,44 +127,55 @@ if st.button("Run Simulation"):
     st.success(f"🔥 Peak Views: {int(peak_views)} at Time Step {peak_time}")
 
     # -----------------------------
-    # GRAPH
+    # SEPARATE GRAPHS
     # -----------------------------
-    fig, ax = plt.subplots()
+    st.markdown("## 📊 Graphical Results")
 
-    ax.plot(V_list, label="Viewers (V)")
-    ax.plot(S_list, label="Sharers (S)")
-    ax.plot(P_list, label="Passive (P)")
+    # Viewers Graph
+    fig1, ax1 = plt.subplots()
+    ax1.plot(V_list, label="Viewers (V)")
+    ax1.axvline(x=peak_time, linestyle='--', label="Peak")
+    ax1.set_title("📈 Viewers Over Time")
+    ax1.set_xlabel("Time")
+    ax1.set_ylabel("Users")
+    ax1.legend()
+    ax1.grid(False)
+    st.pyplot(fig1)
 
-    ax.axvline(x=peak_time, linestyle='--', label="Peak")
+    # Sharers Graph
+    fig2, ax2 = plt.subplots()
+    ax2.plot(S_list, label="Sharers (S)")
+    ax2.set_title("🔁 Sharers Over Time")
+    ax2.set_xlabel("Time")
+    ax2.set_ylabel("Users")
+    ax2.legend()
+    ax2.grid(False)
+    st.pyplot(fig2)
 
-    ax.set_xlabel("Time")
-    ax.set_ylabel("Users")
-    ax.set_title("TikTok Viral Spread Simulation")
-    ax.legend()
-
-    # ❌ Removed grid for cleaner look
-    ax.grid(False)
-
-    # Optional styling
-    ax.spines['top'].set_visible(False)
-    ax.spines['right'].set_visible(False)
-
-    st.pyplot(fig)
+    # Passive Graph
+    fig3, ax3 = plt.subplots()
+    ax3.plot(P_list, label="Passive Users (P)")
+    ax3.set_title("😴 Passive Users Over Time")
+    ax3.set_xlabel("Time")
+    ax3.set_ylabel("Users")
+    ax3.legend()
+    ax3.grid(False)
+    st.pyplot(fig3)
 
     # -----------------------------
     # INTERPRETATION
     # -----------------------------
     st.markdown("""
-    ## 📊 Result Interpretation
+## 📊 Interpretation of Results
 
-    - 📈 Initial growth shows video gaining popularity  
-    - 🔥 Peak indicates maximum viral reach  
-    - 📉 Decline shows loss of user interest  
+- 📈 Growth phase → Video becomes popular  
+- 🔥 Peak → Maximum reach  
+- 📉 Decay → Interest decreases  
 
-    ### Key Observations:
-    - Strong network → faster spread  
-    - High decay → shorter viral life  
-    - More sharers → higher peak  
+### Observations:
+- High α and γ → Faster viral spread  
+- High β and δ → Faster decline  
+- Strong network → Higher peak  
 
-    This model demonstrates how TikTok trends rise and fall over time.
-    """)
+This model successfully explains how TikTok trends rise and fall over time.
+""")
