@@ -43,9 +43,9 @@ The system is based on the following equations:
 - P = N − (V + S)
 
 ### Where:
-- α → Growth rate (how fast video spreads)  
-- β → Decay rate (loss of interest)  
-- γ → Conversion rate (viewer → sharer)  
+- α → Growth rate  
+- β → Decay rate  
+- γ → Conversion rate  
 - δ → Sharer fatigue  
 """)
 
@@ -60,14 +60,13 @@ The model uses a random network to represent users.
 - Nodes → Users  
 - Edges → Connections  
 
-We calculate **centrality** to measure influence:
-- Higher centrality → faster spread 🚀  
+Higher centrality → faster spread 🚀  
 """)
 
 st.markdown("### 🔧 Adjust Parameters")
 
 # -----------------------------
-# USER INPUT (Streamlit UI)
+# USER INPUT
 # -----------------------------
 N = st.slider("Total Users (N)", 100, 1000, 500)
 
@@ -86,31 +85,23 @@ p = st.slider("Network Connection Probability", 0.0, 0.1, 0.02)
 dt = 0.1
 
 # -----------------------------
-# RUN SIMULATION BUTTON
+# RUN SIMULATION
 # -----------------------------
 if st.button("Run Simulation"):
 
-    # Create Network
     G = nx.erdos_renyi_graph(N, p)
-
-    # Centrality factor
     centrality = np.mean(list(nx.degree_centrality(G).values()))
 
     st.write("📊 Average Network Centrality:", round(centrality, 4))
 
-    # Storage
-    V_list = []
-    S_list = []
-    P_list = []
+    V_list, S_list, P_list = [], [], []
 
-    # Simulation
     for t in range(time_steps):
-
         dV = (alpha * S * centrality - beta * V) * dt
         dS = (gamma * V - delta * S) * dt
 
-        V = V + dV
-        S = S + dS
+        V += dV
+        S += dS
         P = N - (V + S)
 
         V = max(V, 0)
@@ -121,47 +112,51 @@ if st.button("Run Simulation"):
         S_list.append(S)
         P_list.append(P)
 
-    # Peak
     peak_views = max(V_list)
     peak_time = V_list.index(peak_views)
 
     st.success(f"🔥 Peak Views: {int(peak_views)} at Time Step {peak_time}")
 
     # -----------------------------
-    # SEPARATE GRAPHS
+    # GRAPHICAL RESULTS
     # -----------------------------
     st.markdown("## 📊 Graphical Results")
 
-    # Viewers Graph
+    # ✅ COMBINED GRAPH
+    fig_comb, ax_comb = plt.subplots()
+    ax_comb.plot(V_list, label="Viewers (V)")
+    ax_comb.plot(S_list, label="Sharers (S)")
+    ax_comb.plot(P_list, label="Passive (P)")
+    ax_comb.axvline(x=peak_time, linestyle='--', label="Peak")
+
+    ax_comb.set_title("📊 Combined Graph")
+    ax_comb.set_xlabel("Time")
+    ax_comb.set_ylabel("Users")
+    ax_comb.legend()
+    ax_comb.grid(False)
+
+    st.pyplot(fig_comb)
+
+    # -----------------------------
+    # SEPARATE GRAPHS
+    # -----------------------------
+
+    # Viewers
     fig1, ax1 = plt.subplots()
     ax1.plot(V_list, label="Viewers (V)")
     ax1.axvline(x=peak_time, linestyle='--', label="Peak")
     ax1.set_title("📈 Viewers Over Time")
-    ax1.set_xlabel("Time")
-    ax1.set_ylabel("Users")
     ax1.legend()
     ax1.grid(False)
     st.pyplot(fig1)
 
-    # Sharers Graph
+    # Sharers
     fig2, ax2 = plt.subplots()
     ax2.plot(S_list, label="Sharers (S)")
     ax2.set_title("🔁 Sharers Over Time")
-    ax2.set_xlabel("Time")
-    ax2.set_ylabel("Users")
     ax2.legend()
     ax2.grid(False)
     st.pyplot(fig2)
-
-    # Passive Graph
-    fig3, ax3 = plt.subplots()
-    ax3.plot(P_list, label="Passive Users (P)")
-    ax3.set_title("😴 Passive Users Over Time")
-    ax3.set_xlabel("Time")
-    ax3.set_ylabel("Users")
-    ax3.legend()
-    ax3.grid(False)
-    st.pyplot(fig3)
 
     # -----------------------------
     # INTERPRETATION
