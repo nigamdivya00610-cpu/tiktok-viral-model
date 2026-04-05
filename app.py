@@ -117,7 +117,7 @@ if run:
     ax3.plot(S, label="Sharers")
     ax3.plot(P, label="Passive")
     ax3.legend()
-    ax3.set_title("Combined")
+    ax3.set_title("Growth-Decay Graph")
     st.pyplot(fig3)
 
     # -----------------------------
