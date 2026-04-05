@@ -1,7 +1,6 @@
 import streamlit as st
 import numpy as np
 import matplotlib.pyplot as plt
-import networkx as nx
 
 # -----------------------------
 # PAGE CONFIG
@@ -34,10 +33,10 @@ st.markdown("""
 # HEADER
 # -----------------------------
 st.markdown('<p class="title">📱 TikTok Viral Spread Simulator</p>', unsafe_allow_html=True)
-st.markdown('<p class="subtitle">Growth-Decay + Network + Influencer Effect</p>', unsafe_allow_html=True)
+st.markdown('<p class="subtitle">Growth-Decay Model (Without Network)</p>', unsafe_allow_html=True)
 
 # -----------------------------
-# LAYOUT: PARAMETERS
+# PARAMETERS
 # -----------------------------
 st.markdown('<p class="section">🔧 Model Parameters</p>', unsafe_allow_html=True)
 
@@ -55,14 +54,12 @@ with col3:
     beta = st.slider("Decay Rate (β)", 0.01, 0.5, 0.1)
     delta = st.slider("Sharer Decay (δ)", 0.01, 0.5, 0.2)
 
-# Extra row
 col4, col5 = st.columns(2)
 
 with col4:
-    p = st.slider("Network Density (p)", 0.001, 0.1, 0.01)
+    time_steps = st.slider("Time Steps", 50, 300, 150)
 
 with col5:
-    time_steps = st.slider("Time Steps", 50, 300, 150)
     S0 = st.number_input("Initial Sharers", 1, N, 5)
 
 # -----------------------------
@@ -77,17 +74,6 @@ run = st.button("Run Simulation 🚀")
 if run:
 
     progress = st.progress(0)
-
-    # Create network
-    G = nx.erdos_renyi_graph(N, p)
-
-    # Centrality & Influencers
-    centrality = nx.degree_centrality(G)
-    avg_centrality = np.mean(list(centrality.values()))
-
-    threshold = np.percentile(list(centrality.values()), 95)
-    influencers = [n for n, v in centrality.items() if v >= threshold]
-    influencer_effect = len(influencers) / N
 
     # Initial values
     V, S = V0, S0
@@ -104,7 +90,7 @@ if run:
 
         progress.progress((t + 1) / time_steps)
 
-        growth_factor = (1 + avg_centrality + influencer_effect)
+        growth_factor = 1  # Removed network effect
 
         dV = (alpha * S * (P/N) * growth_factor - beta * V) * dt
         dS = (gamma * V * (P/N) - delta * S) * dt
@@ -129,12 +115,9 @@ if run:
 
     st.markdown("## 📊 Key Metrics")
 
-    m1, m2, m3 = st.columns(3)
+    m1, m2 = st.columns(2)
     m1.metric("🔥 Peak Views", int(peak_views))
     m2.metric("⏱ Peak Time", peak_time)
-    m3.metric("🌟 Influencers", len(influencers))
-
-    st.write("📊 Avg Centrality:", round(avg_centrality, 4))
 
     # -----------------------------
     # GRAPHS
@@ -143,7 +126,6 @@ if run:
 
     g1, g2 = st.columns(2)
 
-    # Combined Graph
     with g1:
         fig1, ax1 = plt.subplots()
         ax1.plot(np.array(V_list)/N, label="Viewers", color='red')
@@ -154,7 +136,6 @@ if run:
         ax1.legend()
         st.pyplot(fig1)
 
-    # Viewers Graph
     with g2:
         fig2, ax2 = plt.subplots()
         ax2.plot(V_list, color='red')
@@ -162,33 +143,46 @@ if run:
         ax2.set_title("Viewers Over Time")
         st.pyplot(fig2)
 
-    # Sharers Graph
     fig3, ax3 = plt.subplots()
     ax3.plot(S_list, color='blue')
     ax3.set_title("Sharers Over Time")
     st.pyplot(fig3)
 
     # -----------------------------
-    # NETWORK VISUAL
+    # DYNAMIC INTERPRETATION
     # -----------------------------
-    st.markdown("## 🌐 Network Structure")
+    st.markdown("## 📘 Smart Interpretation")
 
-    fig_net, ax = plt.subplots()
-    nx.draw(G, node_size=10, ax=ax)
-    st.pyplot(fig_net)
+    insights = []
 
-    # -----------------------------
-    # INTERPRETATION
-    # -----------------------------
-    st.markdown("## 📘 Interpretation")
+    # Speed of virality
+    if peak_time < time_steps * 0.3:
+        insights.append("🚀 The video goes viral very quickly (early peak). Strong initial growth.")
+    elif peak_time < time_steps * 0.7:
+        insights.append("📈 The video shows moderate growth before reaching peak.")
+    else:
+        insights.append("🐢 Slow growth observed. The video takes time to spread.")
 
-    st.info("""
-    • Initial slow growth → discovery phase  
-    • Rapid rise → viral spread  
-    • Peak → maximum reach  
-    • Decline → saturation  
+    # Strength of virality
+    if peak_views > 0.6 * N:
+        insights.append("🔥 High virality — majority of users reached.")
+    elif peak_views > 0.3 * N:
+        insights.append("⚡ Moderate virality — decent reach.")
+    else:
+        insights.append("📉 Low virality — limited spread.")
 
-    ✔ Influencers accelerate spread  
-    ✔ Network density impacts reach  
-    ✔ Decay controls trend lifespan  
-    """)
+    # Growth vs decay
+    if alpha > beta:
+        insights.append("💡 Growth rate is higher than decay → sustained engagement.")
+    else:
+        insights.append("⛔ Decay dominates → users lose interest quickly.")
+
+    # Sharing behavior
+    if gamma > delta:
+        insights.append("🔁 Users actively share → boosts virality.")
+    else:
+        insights.append("📉 Sharing declines quickly → limits spread.")
+
+    # Display insights
+    for i in insights:
+        st.write(i)
