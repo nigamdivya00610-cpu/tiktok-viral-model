@@ -2,12 +2,13 @@ import streamlit as st
 import numpy as np
 import matplotlib.pyplot as plt
 import networkx as nx
-import random
 
 # -----------------------------
 # TITLE
 # -----------------------------
-st.title("📱 Advanced TikTok Viral Spread Model (Improved)")
+st.title("📱 TikTok Viral Spread Model")
+
+st.markdown("Growth-Decay + Network + Influencer Effect")
 
 # -----------------------------
 # PARAMETERS
@@ -21,31 +22,32 @@ beta = st.slider("Decay Rate (β)", 0.01, 0.5, 0.1)
 gamma = st.slider("Viewer → Sharer (γ)", 0.1, 1.0, 0.6)
 delta = st.slider("Sharer Decay (δ)", 0.01, 0.5, 0.2)
 
+p = st.slider("Network Density (p)", 0.001, 0.1, 0.01)
 time_steps = st.slider("Time Steps", 50, 300, 150)
 
 V0 = st.number_input("Initial Viewers", 1, N, 10)
 S0 = st.number_input("Initial Sharers", 1, N, 5)
-
-boost = st.slider("Algorithm Boost", 1.0, 3.0, 1.0)
-suppression = st.slider("Suppression", 0.0, 1.0, 0.0)
 
 # -----------------------------
 # RUN SIMULATION
 # -----------------------------
 if st.button("Run Simulation"):
 
-    # ✅ FIX 1: Scale-Free Network (Realistic)
-    G = nx.barabasi_albert_graph(N, 3)
+    # Create network
+    G = nx.erdos_renyi_graph(N, p)
 
+    # Centrality & Influencers
     centrality = nx.degree_centrality(G)
+    avg_centrality = np.mean(list(centrality.values()))
 
-    # ✅ FIX 2: True Influencers (top nodes)
-    sorted_nodes = sorted(centrality.items(), key=lambda x: x[1], reverse=True)
-    influencers = [node for node, _ in sorted_nodes[:int(0.05*N)]]
+    threshold = np.percentile(list(centrality.values()), 95)
+    influencers = [n for n, v in centrality.items() if v >= threshold]
+    influencer_effect = len(influencers) / N
 
+    st.write("📊 Avg Centrality:", round(avg_centrality, 4))
     st.write("🌟 Influencers:", len(influencers))
 
-    # Initial populations
+    # Initial values
     V, S = V0, S0
     P = N - (V + S)
 
@@ -53,30 +55,24 @@ if st.button("Run Simulation"):
 
     dt = 0.1
 
+    # -----------------------------
+    # SIMULATION LOOP
+    # -----------------------------
     for t in range(time_steps):
 
-        # ✅ FIX 3: Influencer-driven spread
-        influencer_boost = 1 + (len(influencers)/N)
+        growth_factor = (1 + avg_centrality + influencer_effect)
 
-        # Random factor (stochastic behavior)
-        randomness = random.uniform(0.9, 1.1)
+        dV = (alpha * S * (P/N) * growth_factor - beta * V) * dt
+        dS = (gamma * V * (P/N) - delta * S) * dt
 
-        # Growth equation improved
-        dV = (alpha * S * (P/N) * boost * influencer_boost * randomness - beta * V) * dt
-        dS = (gamma * V * (P/N) * randomness - delta * S) * dt
-
-        # Apply suppression
-        dV *= (1 - suppression)
-
-        # Update
         V += dV
         S += dS
         P = N - (V + S)
 
-        # ✅ FIX 4: Stability check
-        V = max(0, min(V, N))
-        S = max(0, min(S, N))
-        P = max(0, min(P, N))
+        # Avoid negative values
+        V = max(V, 0)
+        S = max(S, 0)
+        P = max(P, 0)
 
         V_list.append(V)
         S_list.append(S)
@@ -90,32 +86,67 @@ if st.button("Run Simulation"):
 
     st.success(f"🔥 Peak Views: {int(peak_views)} at Time {peak_time}")
 
-    # -----------------------------
-    # GRAPH
-    # -----------------------------
-    fig, ax = plt.subplots()
+    # =============================
+    # 📊 GRAPH 1: COMBINED GRAPH
+    # =============================
+    st.markdown("## 📊 Combined Graph")
 
-    ax.plot(np.array(V_list)/N, label="Viewers")
-    ax.plot(np.array(S_list)/N, label="Sharers")
-    ax.plot(np.array(P_list)/N, label="Passive")
+    fig1, ax1 = plt.subplots()
 
-    ax.axvline(x=peak_time, linestyle='--', label="Peak")
+    ax1.plot(np.array(V_list)/N, label="Viewers")
+    ax1.plot(np.array(S_list)/N, label="Sharers")
+    ax1.plot(np.array(P_list)/N, label="Passive")
 
-    ax.set_title("Viral Spread (Improved Model)")
-    ax.set_xlabel("Time")
-    ax.set_ylabel("Proportion")
-    ax.legend()
+    ax1.axvline(x=peak_time, linestyle='--', label="Peak")
 
-    st.pyplot(fig)
+    ax1.set_title("Viral Spread (Normalized)")
+    ax1.set_xlabel("Time")
+    ax1.set_ylabel("Proportion")
+    ax1.legend()
+
+    st.pyplot(fig1)
+
+    # =============================
+    # 📈 GRAPH 2: VIEWERS
+    # =============================
+    st.markdown("## 📈 Viewers Graph")
+
+    fig2, ax2 = plt.subplots()
+
+    ax2.plot(V_list)
+    ax2.axvline(x=peak_time, linestyle='--')
+
+    ax2.set_title("Viewers Over Time")
+    ax2.set_xlabel("Time")
+    ax2.set_ylabel("Viewers")
+
+    st.pyplot(fig2)
+
+    # =============================
+    # 🔁 GRAPH 3: SHARERS
+    # =============================
+    st.markdown("## 🔁 Sharers Graph")
+
+    fig3, ax3 = plt.subplots()
+
+    ax3.plot(S_list)
+
+    ax3.set_title("Sharers Over Time")
+    ax3.set_xlabel("Time")
+    ax3.set_ylabel("Sharers")
+
+    st.pyplot(fig3)
 
     # -----------------------------
     # INTERPRETATION
     # -----------------------------
     st.markdown("""
-### 📊 Interpretation
+## 📊 Interpretation
 
-- Faster rise → strong influencer impact  
-- Randomness → realistic viral uncertainty  
+- Initial slow growth → discovery phase  
+- Rapid rise → viral spread  
 - Peak → maximum reach  
-- Decline → audience saturation  
+- Decline → saturation  
+
+This matches real TikTok trends.
 """)
