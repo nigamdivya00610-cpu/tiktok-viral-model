@@ -8,7 +8,21 @@ import networkx as nx
 # -----------------------------
 st.title("📱 TikTok Viral Spread Model")
 
-st.info("This model simulates viral spread using Growth-Decay + Network Effect")
+st.info("This project models how a TikTok video becomes viral using Growth-Decay equations and Network Structure.")
+
+# -----------------------------
+# PROJECT DESCRIPTION
+# -----------------------------
+st.markdown("""
+## 📖 Project Description
+
+This model simulates how a TikTok video spreads among users in a network.
+
+### 👤 User Categories:
+- Viewers (V)
+- Sharers (S)
+- Passive Users (P)
+""")
 
 # -----------------------------
 # USER INPUT
@@ -20,16 +34,16 @@ N = st.slider("Total Users (N)", 100, 1000, 500)
 alpha = st.slider("Growth Rate (α)", 0.0, 1.0, 0.9)
 beta = st.slider("Decay Rate (β)", 0.0, 1.0, 0.1)
 gamma = st.slider("Viewer → Sharer (γ)", 0.0, 1.0, 0.8)
-delta = st.slider("Sharer Decay (δ)", 0.0, 1.0, 0.05)
+delta = st.slider("Sharer Decay (δ)", 0.0, 1.0, 0.5)
 
-time_steps = st.slider("Time Steps", 50, 200, 100)
+time_steps = st.slider("Time Steps", 10, 200, 100)
 
 V = st.number_input("Initial Viewers (V0)", 1, N, 30)
 S = st.number_input("Initial Sharers (S0)", 1, N, 20)
 
-p = st.slider("Network Connection Probability", 0.0, 0.2, 0.1)
+p = st.slider("Network Connection Probability", 0.0, 0.1, 0.01)
 
-dt = 1  # 🔥 Important fix
+dt = 0.1
 
 # -----------------------------
 # RUN SIMULATION
@@ -42,27 +56,29 @@ if st.button("Run Simulation"):
 
     st.write("📊 Average Network Centrality:", round(centrality, 4))
 
-    # Initial values
+    # Initialize P correctly ✅
     P = N - (V + S)
 
-    V_list, S_list = [], []
+    V_list, S_list, P_list = [], [], []
 
     for t in range(time_steps):
 
-        # 🔥 Strong viral growth model
-        dV = (alpha * S * (P / N) * 10 - beta * V) * dt
-        dS = (gamma * V * (P / N) * 8 - delta * S) * dt
+        # ✅ Improved viral formula (with network + audience)
+        dV = (alpha * S * (P / N) * (1 + centrality) - beta * V) * dt
+        dS = (gamma * V * (P / N) - delta * S) * dt
 
         V += dV
         S += dS
         P = N - (V + S)
 
+        # Avoid negatives
         V = max(V, 0)
         S = max(S, 0)
         P = max(P, 0)
 
         V_list.append(V)
         S_list.append(S)
+        P_list.append(P)
 
     peak_views = max(V_list)
     peak_time = V_list.index(peak_views)
@@ -70,26 +86,29 @@ if st.button("Run Simulation"):
     st.success(f"🔥 Peak Views: {int(peak_views)} at Time Step {peak_time}")
 
     # -----------------------------
-    # COMBINED GRAPH (CLEAR CURVE)
+    # GRAPHICAL RESULTS
     # -----------------------------
-    st.markdown("## 📊 Combined Graph")
+    st.markdown("## 📊 Graphical Results")
 
-    fig, ax = plt.subplots()
+    # ✅ Combined Graph (Normalized for better curve)
+    fig_comb, ax_comb = plt.subplots()
 
-    ax.plot(V_list, label="Viewers (V)")
-    ax.plot(S_list, label="Sharers (S)")
-    ax.axvline(x=peak_time, linestyle='--', label="Peak")
+    ax_comb.plot(np.array(V_list)/N, label="Viewers")
+    ax_comb.plot(np.array(S_list)/N, label="Sharers")
+    ax_comb.plot(np.array(P_list)/N, label="Passive")
 
-    ax.set_title("Viral Growth Curve")
-    ax.set_xlabel("Time")
-    ax.set_ylabel("Users")
-    ax.legend()
-    ax.grid(False)
+    ax_comb.axvline(x=peak_time, linestyle='--', label="Peak")
 
-    st.pyplot(fig)
+    ax_comb.set_title("📊 Combined Graph (Normalized)")
+    ax_comb.set_xlabel("Time")
+    ax_comb.set_ylabel("Proportion")
+    ax_comb.legend()
+    ax_comb.grid(False)
+
+    st.pyplot(fig_comb)
 
     # -----------------------------
-    # SEPARATE GRAPHS
+    # Separate Graphs
     # -----------------------------
 
     # Viewers
@@ -113,10 +132,9 @@ if st.button("Run Simulation"):
     st.markdown("""
 ## 📊 Interpretation
 
-- Initial slow growth  
-- Rapid viral increase 🚀  
-- Peak point 🔥  
-- Decline due to saturation 📉  
+- Curve rises → viral growth  
+- Peak → maximum reach  
+- Decline → saturation  
 
-This matches real TikTok viral trends.
+This matches real TikTok viral behavior.
 """)
