@@ -1,6 +1,7 @@
 import streamlit as st
 import numpy as np
 import matplotlib.pyplot as plt
+import networkx as nx
 
 # -----------------------------
 # PAGE CONFIG
@@ -8,79 +9,44 @@ import matplotlib.pyplot as plt
 st.set_page_config(page_title="TikTok Viral Model", layout="wide")
 
 # -----------------------------
-# CUSTOM STYLING
-# -----------------------------
-st.markdown("""
-<style>
-.title {
-    font-size:40px;
-    font-weight:bold;
-    color:#ff0050;
-}
-.subtitle {
-    font-size:18px;
-    color:gray;
-}
-.section {
-    font-size:24px;
-    font-weight:bold;
-    margin-top:20px;
-}
-</style>
-""", unsafe_allow_html=True)
-
-# -----------------------------
 # HEADER
 # -----------------------------
-st.markdown('<p class="title">📱 TikTok Viral Spread Simulator</p>', unsafe_allow_html=True)
-st.markdown('<p class="subtitle">Growth-Decay Model</p>', unsafe_allow_html=True)
-
-# -----------------------------
-# TOPIC CONTENT
-# -----------------------------
-st.markdown("## 📱 Trending Video Spread on TikTok Modelling")
-
-st.markdown("""
-This project models how a video becomes viral on TikTok using a mathematical approach.
-
-The spread of a video is treated as a dynamic process where users interact with content over time. The model divides the population into three main groups:
-
-- 👀 **Viewers (V)**  
-- 🔁 **Sharers (S)**  
-- 😶 **Passive Users (P)**  
-
-The model is based on:
-- 📈 Growth (sharing increases reach)  
-- 📉 Decay (interest decreases over time)  
-
-It helps analyze peak views, peak time, and engagement behavior.
-""")
+st.markdown("# 📱 TikTok Viral Spread Simulator")
+st.markdown("### Growth-Decay + Network Model")
 
 # -----------------------------
 # SIDEBAR INPUTS
 # -----------------------------
-st.sidebar.markdown("### 📱 TikTok Controls")
+st.sidebar.markdown("## 📱 Simulation Controls")
 
+# Base inputs
 N = st.sidebar.slider("Total Users (N)", 100, 2000, 500)
 V0 = st.sidebar.number_input("Initial Viewers", 1, N, 10)
+S0 = st.sidebar.number_input("Initial Sharers", 1, N, 5)
 
 alpha = st.sidebar.slider("Growth Rate (α)", 0.1, 1.0, 0.8)
 gamma = st.sidebar.slider("Viewer → Sharer (γ)", 0.1, 1.0, 0.6)
-
 beta = st.sidebar.slider("Decay Rate (β)", 0.01, 0.5, 0.1)
 delta = st.sidebar.slider("Sharer Decay (δ)", 0.01, 0.5, 0.2)
 
 time_steps = st.sidebar.slider("Time Steps", 50, 300, 150)
-S0 = st.sidebar.number_input("Initial Sharers", 1, N, 5)
+
+# NEW Network Inputs
+st.sidebar.markdown("## 🌐 Network Controls")
+connection_k = st.sidebar.slider("Connections per User (k)", 1, 10, 3)
+influencer_boost = st.sidebar.slider("Influencer Boost", 1.0, 5.0, 1.5)
 
 run = st.sidebar.button("Run Simulation 🚀")
 
-# -----------------------------
-# SIMULATION
-# -----------------------------
+# =============================
+# RUN MODELS
+# =============================
 if run:
 
-    progress = st.progress(0)
+    # =============================
+    # 1️⃣ GROWTH-DECAY MODEL
+    # =============================
+    st.markdown("## 📈 Growth-Decay Model")
 
     V, S = V0, S0
     P = N - (V + S)
@@ -89,8 +55,6 @@ if run:
     dt = 0.1
 
     for t in range(time_steps):
-
-        progress.progress((t + 1) / time_steps)
 
         dV = (alpha * S * (P/N) - beta * V) * dt
         dS = (gamma * V * (P/N) - delta * S) * dt
@@ -107,128 +71,64 @@ if run:
         S_list.append(S)
         P_list.append(P)
 
-    # -----------------------------
-    # METRICS
-    # -----------------------------
     peak_views = max(V_list)
     peak_time = V_list.index(peak_views)
 
-    st.markdown("## 📊 Key Metrics")
+    st.metric("🔥 Peak Views", int(peak_views))
+    st.metric("⏱ Peak Time", peak_time)
 
-    m1, m2 = st.columns(2)
-    m1.metric("🔥 Peak Views", int(peak_views))
-    m2.metric("⏱ Peak Time", peak_time)
+    fig1, ax1 = plt.subplots()
+    ax1.plot(V_list, label="Viewers")
+    ax1.plot(S_list, label="Sharers")
+    ax1.plot(P_list, label="Passive")
+    ax1.axvline(x=peak_time, linestyle='--')
+    ax1.set_title("Growth-Decay Model")
+    ax1.legend()
+    st.pyplot(fig1)
 
-    # -----------------------------
-    # GRAPHS
-    # -----------------------------
-    st.markdown("## 📈 Simulation Results")
-
-    g1, g2 = st.columns(2)
-
-    # Viewers Graph
-    with g1:
-        fig2, ax2 = plt.subplots()
-        ax2.plot(V_list, color='red')
-        ax2.axvline(x=peak_time, linestyle='--')
-        ax2.set_title("Viewers Over Time")
-        st.pyplot(fig2)
-
-    # Sharers Graph
-    with g2:
-        fig3, ax3 = plt.subplots()
-        ax3.plot(S_list, color='blue')
-        ax3.set_title("Sharers Over Time")
-        st.pyplot(fig3)
-
-    # -----------------------------
-    # FINAL COMBINED GRAPH
-    # -----------------------------
-    st.markdown("## 📊 Final Combined Overview")
-
-    fig4, ax4 = plt.subplots()
-    ax4.plot(V_list, label="Viewers", color='red')
-    ax4.plot(S_list, label="Sharers", color='blue')
-    ax4.plot(P_list, label="Passive", color='green')
-    ax4.axvline(x=peak_time, linestyle='--', label="Peak Time")
-    ax4.set_title("Final Combined Spread (Actual Values)")
-    ax4.set_xlabel("Time")
-    ax4.set_ylabel("Users")
-    ax4.legend()
-    st.pyplot(fig4)
-
-    # -----------------------------
-    # INTERPRETATION
-    # -----------------------------
-    st.markdown("**Interpretation**")
-
-    insights = []
+    # 🔍 Interpretation (Model 1)
+    st.markdown("### 🧠 Interpretation (Growth-Decay)")
 
     if peak_time < time_steps * 0.3:
-        insights.append("🚀 The video spreads very quickly and becomes viral early.")
+        st.write("🚀 Rapid viral growth (early peak).")
     elif peak_time < time_steps * 0.7:
-        insights.append("📈 The video shows steady growth before reaching peak.")
+        st.write("📈 Steady growth before peak.")
     else:
-        insights.append("🐢 The video spreads slowly and takes time to gain attention.")
+        st.write("🐢 Slow spread.")
 
     if peak_views > 0.6 * N:
-        insights.append("🔥 The video achieves high virality and reaches most users.")
+        st.write("🔥 High virality (reaches most users).")
     elif peak_views > 0.3 * N:
-        insights.append("⚡ The video achieves moderate popularity.")
+        st.write("⚡ Moderate popularity.")
     else:
-        insights.append("📉 The video has limited reach.")
+        st.write("📉 Low reach.")
 
     if alpha > beta:
-        insights.append("💡 Growth is stronger than decay → sustained engagement.")
+        st.write("💡 Growth dominates decay → sustained trend.")
     else:
-        insights.append("⛔ High decay reduces interest quickly.")
+        st.write("⛔ Decay dominates → short-lived trend.")
 
-    if gamma > delta:
-        insights.append("🔁 Sharing behavior boosts the spread.")
-    else:
-        insights.append("📉 Low sharing limits virality.")
+    # =============================
+    # 2️⃣ NETWORK MODEL
+    # =============================
+    st.markdown("## 🌐 Network-Based Model")
 
-    for i in insights:
-        st.write(i)
-# =============================
-# 🌐 NETWORK-BASED VIRAL MODEL (ADVANCED ADD-ON)
-# =============================
-
-st.markdown("## 🌐 Advanced Network-Based Viral Spread")
-
-import networkx as nx
-
-run_network = st.button("Run Network Simulation 🌐")
-
-if run_network:
-
-    progress_net = st.progress(0)
-
-    # Create Scale-Free Network (TikTok-like)
-    G = nx.barabasi_albert_graph(N, 3)
-
-    # Centrality (influencer detection)
+    G = nx.barabasi_albert_graph(N, connection_k)
     centrality = nx.degree_centrality(G)
 
-    # Initialize states
     states = {i: "P" for i in G.nodes()}
 
-    # Initial viewers & sharers
     init_V = np.random.choice(list(G.nodes()), V0, replace=False)
     init_S = np.random.choice(list(G.nodes()), S0, replace=False)
 
     for i in init_V:
         states[i] = "V"
-
     for i in init_S:
         states[i] = "S"
 
     V_net, S_net, P_net = [], [], []
 
-    # Simulation loop
     for t in range(time_steps):
-
-        progress_net.progress((t + 1) / time_steps)
 
         new_states = states.copy()
 
@@ -236,7 +136,6 @@ if run_network:
 
             if states[node] == "P":
                 neighbors = list(G.neighbors(node))
-
                 influence = sum(1 for n in neighbors if states[n] == "S")
 
                 prob_view = alpha * (influence / len(neighbors)) if len(neighbors) > 0 else 0
@@ -245,7 +144,7 @@ if run_network:
                     new_states[node] = "V"
 
             elif states[node] == "V":
-                prob_share = gamma * centrality[node]
+                prob_share = gamma * centrality[node] * influencer_boost
 
                 if np.random.rand() < prob_share:
                     new_states[node] = "S"
@@ -258,64 +157,48 @@ if run_network:
 
         states = new_states
 
-        # Count states
-        V_count = sum(1 for s in states.values() if s == "V")
-        S_count = sum(1 for s in states.values() if s == "S")
-        P_count = sum(1 for s in states.values() if s == "P")
+        V_net.append(sum(1 for s in states.values() if s == "V"))
+        S_net.append(sum(1 for s in states.values() if s == "S"))
+        P_net.append(sum(1 for s in states.values() if s == "P"))
 
-        V_net.append(V_count)
-        S_net.append(S_count)
-        P_net.append(P_count)
-
-    # -----------------------------
-    # METRICS
-    # -----------------------------
     peak_views_net = max(V_net)
     peak_time_net = V_net.index(peak_views_net)
 
-    st.markdown("### 📊 Network Model Metrics")
+    st.metric("🔥 Peak Views (Network)", int(peak_views_net))
+    st.metric("⏱ Peak Time (Network)", peak_time_net)
 
-    c1, c2 = st.columns(2)
-    c1.metric("🔥 Peak Views (Network)", int(peak_views_net))
-    c2.metric("⏱ Peak Time (Network)", peak_time_net)
+    fig2, ax2 = plt.subplots()
+    ax2.plot(V_net, label="Viewers")
+    ax2.plot(S_net, label="Sharers")
+    ax2.plot(P_net, label="Passive")
+    ax2.axvline(x=peak_time_net, linestyle='--')
+    ax2.set_title("Network Model")
+    ax2.legend()
+    st.pyplot(fig2)
 
-    # -----------------------------
-    # GRAPH
-    # -----------------------------
-    fig_net, ax_net = plt.subplots()
-    ax_net.plot(V_net, label="Viewers", color='red')
-    ax_net.plot(S_net, label="Sharers", color='blue')
-    ax_net.plot(P_net, label="Passive", color='green')
-    ax_net.axvline(x=peak_time_net, linestyle='--', label="Peak Time")
-    ax_net.set_title("Network-Based Viral Spread")
-    ax_net.set_xlabel("Time")
-    ax_net.set_ylabel("Users")
-    ax_net.legend()
-
-    st.pyplot(fig_net)
-
-    # -----------------------------
-    # INFLUENCER ANALYSIS
-    # -----------------------------
+    # 🔍 Influencer Insight
     top_node = max(centrality, key=centrality.get)
 
     st.markdown("### 🌟 Influencer Insight")
     st.write(f"Top Influencer Node: {top_node}")
     st.write(f"Centrality Score: {centrality[top_node]:.4f}")
 
-    # -----------------------------
-    # INTERPRETATION
-    # -----------------------------
-    st.markdown("### 🧠 Network Interpretation")
+    # 🔍 Interpretation (Model 2)
+    st.markdown("### 🧠 Interpretation (Network Model)")
 
     if peak_views_net > 0.6 * N:
-        st.write("🔥 Strong viral spread driven by network influencers.")
+        st.write("🔥 Strong viral spread driven by influencers.")
     elif peak_views_net > 0.3 * N:
-        st.write("⚡ Moderate spread with limited influencer effect.")
+        st.write("⚡ Moderate spread with limited influencer impact.")
     else:
-        st.write("📉 Weak spread due to low connectivity or influence.")
+        st.write("📉 Weak spread (poor network influence).")
 
     if peak_time_net < time_steps * 0.3:
-        st.write("🚀 Rapid viral explosion due to highly connected nodes.")
+        st.write("🚀 Fast viral explosion via highly connected users.")
     else:
-        st.write("🐢 Slower spread across the network.")
+        st.write("🐢 Slower spread across network.")
+
+    if influencer_boost > 2:
+        st.write("🌟 Influencers play a major role in virality.")
+    else:
+        st.write("👥 Spread is more organic (less influencer-driven).")
