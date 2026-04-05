@@ -77,7 +77,7 @@ if st.button("Run Simulation"):
     ax.plot(S_list, label="Sharers (S)")
     ax.plot(P_list, label="Passive (P)")
     ax.axvline(x=peak_time, linestyle='--', label="Peak")
-
+    ax.grid()
     ax.set_xlabel("Time")
     ax.set_ylabel("Users")
     ax.set_title("TikTok Viral Spread Simulation")
