@@ -172,7 +172,7 @@ if run:
     # -----------------------------
     # DYNAMIC INTERPRETATION
     # -----------------------------
-    st.markdown("##Interpretation")
+    st.markdown("<h2><b>Interpretation</b></h2>", unsafe_allow_html=True)
 
     insights = []
 
