@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import networkx as nx
 
-st.title("📊 TikTok Viral Spread Model (Improved)")
+st.title("📊 TikTok Viral Spread Model")
 
 # -----------------------------
 # THEORY SECTION (NEW)
