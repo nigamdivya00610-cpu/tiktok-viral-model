@@ -100,7 +100,6 @@ if run:
     # -----------------------------
     st.subheader("📉 Graphs")
 
-    fig1, ax1 = plt.subplots(figsize=(2,2))
     ax1.plot(V)
     ax1.set_title("Viewers")
     st.pyplot(fig1)
