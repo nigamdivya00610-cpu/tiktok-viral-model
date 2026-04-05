@@ -1,126 +1,137 @@
 import streamlit as st
-import networkx as nx
 import numpy as np
-import pandas as pd
 import matplotlib.pyplot as plt
+import networkx as nx
 
-# --- Page Config ---
-st.set_page_config(page_title="TikTok Viral Model", layout="wide")
+st.title("📱 TikTok Viral Spread Simulation")
 
-st.title("📈 TikTok Viral Spread: Growth-Decay & Network Model")
-st.markdown("""
-This model simulates a TikTok video's journey. It uses a **Scale-Free Network** (representing influencers and followers) 
-and a **Growth-Decay** differential logic to track how users move between being Passive, Viewers, and Sharers.
-""")
+# =========================
+# USER INPUTS
+# =========================
+st.sidebar.header("Input Parameters")
 
-# --- Sidebar Inputs ---
-st.sidebar.header("🕹️ Simulation Controls")
-N = st.sidebar.slider("Total Users (N)", 100, 1000, 500)
-m = st.sidebar.slider("Network Connectivity (m)", 1, 5, 2)
-alpha = st.sidebar.slider("Growth Rate (Virality)", 0.1, 1.0, 0.6)
-beta = st.sidebar.slider("Decay Rate (Boredom)", 0.01, 0.5, 0.1)
-steps = st.sidebar.slider("Time Steps", 50, 200, 100)
+days = st.sidebar.slider("Number of Days", 10, 100, 50)
+v0 = st.sidebar.number_input("Initial Viewers", 1, 1000, 10)
 
-intervention = st.sidebar.selectbox("Intervention Strategy", ["None", "Seed Influencers", "Shadowban Hubs"])
+r = st.sidebar.slider("Growth Rate (Sharers)", 0.1, 1.0, 0.5)
+d = st.sidebar.slider("Decay Rate (Interest Loss)", 0.01, 0.5, 0.1)
+k = st.sidebar.number_input("Max Audience (K)", 50, 10000, 500)
 
-# --- Simulation Logic ---
-def run_simulation():
-    # 1. Network Structure (Barabási-Albert)
-    G = nx.barabasi_albert_graph(N, m)
-    centrality = nx.degree_centrality(G)
+share_ratio = st.sidebar.slider("Sharer Ratio", 0.1, 1.0, 0.5)
+
+# =========================
+# NETWORK CREATION
+# =========================
+st.subheader("🌐 Social Network Structure")
+
+G = nx.erdos_renyi_graph(20, 0.2)
+
+degree_centrality = nx.degree_centrality(G)
+
+# Plot network
+fig_net, ax_net = plt.subplots()
+pos = nx.spring_layout(G)
+nx.draw(G, pos, with_labels=True, node_size=500, ax=ax_net)
+st.pyplot(fig_net)
+
+# =========================
+# SIMULATION ARRAYS
+# =========================
+viewers = np.zeros(days)
+sharers = np.zeros(days)
+passive = np.zeros(days)
+
+viewers[0] = v0
+sharers[0] = v0 * share_ratio
+passive[0] = v0 - sharers[0]
+
+# =========================
+# SIMULATION LOOP
+# =========================
+for t in range(days - 1):
+    vt = viewers[t]
     
-    # Initialize States: 0=Passive, 1=Viewer, 2=Sharer
-    status = np.zeros(N)
+    growth = r * sharers[t] * (1 - vt / k)
+    decay = d * vt
     
-    # Intervention Strategy Logic
-    sorted_nodes = sorted(centrality, key=centrality.get, reverse=True)
-    if intervention == "Seed Influencers":
-        for i in sorted_nodes[:5]: status[i] = 2 # Top 5 become active sharers
-    elif intervention == "Shadowban Hubs":
-        for i in sorted_nodes[:5]: centrality[i] = 0 # Top 5 lose all reach
-    else:
-        status[np.random.randint(0, N, 5)] = 2 # Random initial seeds
+    new_viewers = vt + growth - decay
+    
+    viewers[t+1] = new_viewers
+    sharers[t+1] = new_viewers * share_ratio
+    passive[t+1] = new_viewers - sharers[t+1]
 
-    v_hist, s_hist, p_hist = [], [], []
+# =========================
+# METRICS
+# =========================
+peak_views = np.max(viewers)
+peak_day = np.argmax(viewers)
+total_views = np.sum(viewers)
 
-    # 2. Growth-Decay Loop
-    for _ in range(steps):
-        new_status = status.copy()
-        for i in G.nodes():
-            if status[i] == 2: # Sharer
-                # Growth: Infect neighbors based on centrality and alpha
-                for neighbor in G.neighbors(i):
-                    if status[neighbor] == 0:
-                        if np.random.rand() < (alpha * (1 + centrality[i])):
-                            new_status[neighbor] = 1
-                # Decay: Sharer becomes Passive/Bored
-                if np.random.rand() < beta:
-                    new_status[i] = 0
-            
-            elif status[i] == 1: # Viewer
-                # Transition: Viewer becomes Sharer
-                if np.random.rand() < (alpha * 0.5):
-                    new_status[i] = 2
-                # Decay: Viewer becomes Passive
-                if np.random.rand() < beta:
-                    new_status[i] = 0
-        
-        status = new_status
-        v_hist.append(np.sum(status == 1))
-        s_hist.append(np.sum(status == 2))
-        p_hist.append(np.sum(status == 0))
+# Central node
+top_node = max(degree_centrality, key=degree_centrality.get)
 
-    return v_hist, s_hist, p_hist, G
+# =========================
+# GRAPH 1: Viewers
+# =========================
+st.subheader("📊 Graph 1: Viewers Growth")
 
-v_data, s_data, p_data, G_final = run_simulation()
+fig1, ax1 = plt.subplots()
+ax1.plot(viewers)
+ax1.set_title("Viewers vs Days")
+ax1.set_xlabel("Days")
+ax1.set_ylabel("Viewers")
+st.pyplot(fig1)
 
-# --- Metrics ---
-peak_views = max(v_data)
-peak_time = v_data.index(peak_views)
+# =========================
+# GRAPH 2: User Types
+# =========================
+st.subheader("📊 Graph 2: User Types")
 
-col1, col2, col3 = st.columns(3)
-col1.metric("🔥 Peak Viewers", int(peak_views))
-col2.metric("⏱️ Peak Time", peak_time)
-col3.metric("🕸️ Network Density", f"{nx.density(G_final):.4f}")
+fig2, ax2 = plt.subplots()
+ax2.plot(sharers, label="Sharers")
+ax2.plot(passive, label="Passive Users")
+ax2.legend()
+ax2.set_title("Sharers vs Passive Users")
+st.pyplot(fig2)
 
-# --- Output Graphs ---
-st.header("📊 Visualization of Spread")
-g1, g2 = st.columns(2)
+# =========================
+# GRAPH 3: COMBINED
+# =========================
+st.subheader("📊 Graph 3: Combined Graph")
 
-with g1:
-    st.subheader("1. Viewer Growth Curve")
-    fig1, ax1 = plt.subplots()
-    ax1.plot(v_data, color='red', label="Viewers")
-    ax1.set_ylabel("Count")
-    ax1.legend()
-    st.pyplot(fig1)
-
-with g2:
-    st.subheader("2. Sharer Activity (Virality)")
-    fig2, ax2 = plt.subplots()
-    ax2.plot(s_data, color='blue', label="Sharers")
-    ax2.set_ylabel("Count")
-    ax2.legend()
-    st.pyplot(fig2)
-
-st.subheader("3. Final Combined Graph (Total Dynamics)")
-fig3, ax3 = plt.subplots(figsize=(12, 5))
-ax3.plot(v_data, label="Viewers (V)", color='red', alpha=0.8)
-ax3.plot(s_data, label="Sharers (S)", color='blue', alpha=0.8)
-ax3.plot(p_data, label="Passive (P)", color='green', alpha=0.5, linestyle='--')
-ax3.axvline(peak_time, color='black', linestyle=':', label="Viral Peak")
-ax3.set_xlabel("Time Steps")
-ax3.set_ylabel("User Count")
+fig3, ax3 = plt.subplots()
+ax3.plot(viewers, label="Viewers")
+ax3.plot(sharers, label="Sharers")
+ax3.plot(passive, label="Passive")
 ax3.legend()
+ax3.set_title("Combined Viral Spread")
 st.pyplot(fig3)
 
-# --- Interpretation ---
-st.header("📝 Result Interpretation")
-with st.expander("Click to see analysis", expanded=True):
-    if peak_views > (N * 0.5):
-        st.success(f"**Massive Virality:** The video reached {int(peak_views)} users simultaneously. The Growth rate (α={alpha}) successfully overcame the Decay rate (β={beta}).")
-    else:
-        st.warning("**Niche Reach:** The video did not break into the mainstream. The decay rate was too high relative to the network connections.")
+# =========================
+# RESULTS
+# =========================
+st.subheader("📌 Results")
 
-    st.write(f"- **Network Centrality Impact:** The peak occurred at step {peak_time}. By using the '{intervention}' strategy, the 'hubs' in the scale-free network either accelerated or throttled the spread.")
-    st.write("- **Saturation Point:** Notice where the Passive (Green) line stabilizes; this represents the 'exhausted audience' who can no longer be reached.")
+st.write(f"Peak Views: {peak_views:.2f}")
+st.write(f"Peak Day: {peak_day}")
+st.write(f"Total Views: {total_views:.2f}")
+st.write(f"Top Influencer Node: {top_node}")
+
+# =========================
+# INTERPRETATION (ONLY RESULT)
+# =========================
+st.subheader("📖 Interpretation")
+
+if peak_day < days/3:
+    st.write("Video spreads quickly and peaks early.")
+elif peak_day < 2*days/3:
+    st.write("Video shows moderate viral growth.")
+else:
+    st.write("Video spreads slowly but sustains longer.")
+
+if d > r:
+    st.write("High decay reduces virality quickly.")
+else:
+    st.write("Growth dominates → higher viral potential.")
+
+st.write("Nodes with high centrality act as influencers boosting spread.")
