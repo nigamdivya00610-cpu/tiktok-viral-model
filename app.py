@@ -172,7 +172,7 @@ if run:
     # -----------------------------
     # DYNAMIC INTERPRETATION
     # -----------------------------
-    st.markdown("## 📘 Smart Interpretation")
+    st.markdown("Interpretation")
 
     insights = []
 
