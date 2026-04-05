@@ -97,8 +97,8 @@ if st.button("Run Simulation"):
     V_list, S_list, P_list = [], [], []
 
     for t in range(time_steps):
-        dV = (alpha * S * centrality - beta * V) * dt
-        dS = (gamma * V - delta * S) * dt
+        dV = (alpha * S * (P / N) - beta * V) * dt
+        dS = (gamma * V * (P / N) - delta * S) * dt
 
         V += dV
         S += dS
