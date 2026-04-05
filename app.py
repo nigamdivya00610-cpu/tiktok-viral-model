@@ -45,55 +45,35 @@ This project models how a video becomes viral on TikTok using a mathematical app
 
 The spread of a video is treated as a dynamic process where users interact with content over time. The model divides the population into three main groups:
 
-- 👀 **Viewers (V):** Users who are watching the video  
-- 🔁 **Sharers (S):** Users who actively share the video  
-- 😶 **Passive Users (P):** Users who have not yet seen the video  
+- 👀 **Viewers (V)**  
+- 🔁 **Sharers (S)**  
+- 😶 **Passive Users (P)**  
 
-The model is based on a **Growth-Decay mechanism**:
+The model is based on:
+- 📈 Growth (sharing increases reach)  
+- 📉 Decay (interest decreases over time)  
 
-- 📈 **Growth:** Sharers increase the number of viewers by spreading the content  
-- 📉 **Decay:** Users gradually lose interest and stop engaging  
-
-The interaction between these groups determines how fast and how widely a video spreads.
-
-The model also helps identify:
-- 🔥 Peak Views  
-- ⏱ Peak Time  
-- 📊 Engagement behavior  
+It helps analyze peak views, peak time, and engagement behavior.
 """)
 
 # -----------------------------
-# PARAMETERS
+# SIDEBAR INPUTS
 # -----------------------------
-st.markdown('<p class="section">🔧 Model Parameters</p>', unsafe_allow_html=True)
+st.sidebar.markdown("### 📱 TikTok Controls")
 
-col1, col2, col3 = st.columns(3)
+N = st.sidebar.slider("Total Users (N)", 100, 2000, 500)
+V0 = st.sidebar.number_input("Initial Viewers", 1, N, 10)
 
-with col1:
-    N = st.slider("Total Users (N)", 100, 2000, 500)
-    V0 = st.number_input("Initial Viewers", 1, N, 10)
+alpha = st.sidebar.slider("Growth Rate (α)", 0.1, 1.0, 0.8)
+gamma = st.sidebar.slider("Viewer → Sharer (γ)", 0.1, 1.0, 0.6)
 
-with col2:
-    alpha = st.slider("Growth Rate (α)", 0.1, 1.0, 0.8)
-    gamma = st.slider("Viewer → Sharer (γ)", 0.1, 1.0, 0.6)
+beta = st.sidebar.slider("Decay Rate (β)", 0.01, 0.5, 0.1)
+delta = st.sidebar.slider("Sharer Decay (δ)", 0.01, 0.5, 0.2)
 
-with col3:
-    beta = st.slider("Decay Rate (β)", 0.01, 0.5, 0.1)
-    delta = st.slider("Sharer Decay (δ)", 0.01, 0.5, 0.2)
+time_steps = st.sidebar.slider("Time Steps", 50, 300, 150)
+S0 = st.sidebar.number_input("Initial Sharers", 1, N, 5)
 
-col4, col5 = st.columns(2)
-
-with col4:
-    time_steps = st.slider("Time Steps", 50, 300, 150)
-
-with col5:
-    S0 = st.number_input("Initial Sharers", 1, N, 5)
-
-# -----------------------------
-# RUN BUTTON
-# -----------------------------
-st.markdown("### ▶ Run Simulation")
-run = st.button("Run Simulation 🚀")
+run = st.sidebar.button("Run Simulation 🚀")
 
 # -----------------------------
 # SIMULATION
@@ -106,7 +86,6 @@ if run:
     P = N - (V + S)
 
     V_list, S_list, P_list = [], [], []
-
     dt = 0.1
 
     for t in range(time_steps):
@@ -170,9 +149,25 @@ if run:
     st.pyplot(fig3)
 
     # -----------------------------
-    # DYNAMIC INTERPRETATION
+    # FINAL COMBINED GRAPH
     # -----------------------------
-    st.markdown("<h2><b>Interpretation</b></h2>", unsafe_allow_html=True)
+    st.markdown("## 📊 Final Combined Overview")
+
+    fig4, ax4 = plt.subplots()
+    ax4.plot(V_list, label="Viewers", color='red')
+    ax4.plot(S_list, label="Sharers", color='blue')
+    ax4.plot(P_list, label="Passive", color='green')
+    ax4.axvline(x=peak_time, linestyle='--', label="Peak Time")
+    ax4.set_title("Final Combined Spread (Actual Values)")
+    ax4.set_xlabel("Time")
+    ax4.set_ylabel("Users")
+    ax4.legend()
+    st.pyplot(fig4)
+
+    # -----------------------------
+    # INTERPRETATION
+    # -----------------------------
+    st.markdown("## **📘 Smart Interpretation**")
 
     insights = []
 
@@ -188,17 +183,17 @@ if run:
     elif peak_views > 0.3 * N:
         insights.append("⚡ The video achieves moderate popularity.")
     else:
-        insights.append("📉 The video has limited reach and does not go strongly viral.")
+        insights.append("📉 The video has limited reach.")
 
     if alpha > beta:
-        insights.append("💡 Growth rate is higher than decay, so engagement is sustained.")
+        insights.append("💡 Growth is stronger than decay → sustained engagement.")
     else:
-        insights.append("⛔ High decay reduces user interest quickly.")
+        insights.append("⛔ High decay reduces interest quickly.")
 
     if gamma > delta:
-        insights.append("🔁 Users actively share the content, boosting spread.")
+        insights.append("🔁 Sharing behavior boosts the spread.")
     else:
-        insights.append("📉 Sharing is limited, reducing virality.")
+        insights.append("📉 Low sharing limits virality.")
 
     for i in insights:
         st.write(i)
