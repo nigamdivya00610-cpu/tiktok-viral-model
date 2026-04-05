@@ -3,13 +3,74 @@ import numpy as np
 import matplotlib.pyplot as plt
 import networkx as nx
 
+# -----------------------------
+# TITLE
+# -----------------------------
 st.title("📱 TikTok Viral Spread Model")
 
-st.markdown("### 🔧 Adjust Parameters")
+st.info("This model combines Growth-Decay equations with Network Theory to simulate viral spread.")
 
 # -----------------------------
-# USER INPUT (Streamlit UI)
+# PROJECT DESCRIPTION
 # -----------------------------
+st.markdown("""
+## 📖 Project Description
+
+This project models how a TikTok video goes viral using **mathematical modelling and network theory**.
+
+The spread of a video depends on:
+- 👥 User interactions
+- 🔗 Network connections
+- 📈 Sharing behavior
+- ⏳ Loss of interest over time
+
+### User Categories:
+- **Viewers (V)** – Users who watch the video  
+- **Sharers (S)** – Users who share the video  
+- **Passive Users (P)** – Users who ignore the video  
+""")
+
+# -----------------------------
+# MATHEMATICAL MODEL
+# -----------------------------
+st.markdown("""
+## 📐 Mathematical Model
+
+The system is based on growth-decay equations:
+
+- dV/dt = αS − βV  
+- dS/dt = γV − δS  
+- P = N − (V + S)
+
+Where:
+- α → Growth rate (sharing effect)  
+- β → Decay rate (loss of interest)  
+- γ → Viewer to sharer conversion  
+- δ → Sharer fatigue  
+""")
+
+# -----------------------------
+# NETWORK STRUCTURE
+# -----------------------------
+st.markdown("""
+## 🌐 Network Structure
+
+The model uses a **random network** to simulate social connections.
+
+- Nodes → Users  
+- Edges → Connections  
+
+Higher connectivity increases the spread of the video.
+
+We also use **centrality** to measure influence:
+- High centrality → faster viral spread 🚀  
+""")
+
+# -----------------------------
+# USER INPUT
+# -----------------------------
+st.markdown("### 🔧 Adjust Parameters")
+
 N = st.slider("Total Users (N)", 100, 1000, 500)
 
 alpha = st.slider("Growth Rate (α)", 0.0, 1.0, 0.6)
@@ -27,16 +88,15 @@ p = st.slider("Network Connection Probability", 0.0, 0.1, 0.02)
 dt = 0.1
 
 # -----------------------------
-# RUN SIMULATION BUTTON
+# RUN SIMULATION
 # -----------------------------
 if st.button("Run Simulation"):
 
     # Create Network
     G = nx.erdos_renyi_graph(N, p)
 
-    # Centrality factor
+    # Centrality
     centrality = np.mean(list(nx.degree_centrality(G).values()))
-
     st.write("📊 Average Network Centrality:", round(centrality, 4))
 
     # Storage
@@ -69,19 +129,44 @@ if st.button("Run Simulation"):
     st.success(f"🔥 Peak Views: {int(peak_views)} at Time Step {peak_time}")
 
     # -----------------------------
-    # PLOT GRAPH
+    # GRAPH
     # -----------------------------
     fig, ax = plt.subplots()
 
     ax.plot(V_list, label="Viewers (V)")
     ax.plot(S_list, label="Sharers (S)")
     ax.plot(P_list, label="Passive (P)")
+
     ax.axvline(x=peak_time, linestyle='--', label="Peak")
-    ax.grid()
+
     ax.set_xlabel("Time")
     ax.set_ylabel("Users")
     ax.set_title("TikTok Viral Spread Simulation")
     ax.legend()
-    ax.grid()
+
+    # ❌ Removed grid for cleaner look
+    ax.grid(False)
+
+    # Optional styling
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
 
     st.pyplot(fig)
+
+    # -----------------------------
+    # INTERPRETATION
+    # -----------------------------
+    st.markdown("""
+    ## 📊 Result Interpretation
+
+    - 📈 Initial growth shows video gaining popularity  
+    - 🔥 Peak indicates maximum viral reach  
+    - 📉 Decline shows loss of user interest  
+
+    ### Key Observations:
+    - Strong network → faster spread  
+    - High decay → shorter viral life  
+    - More sharers → higher peak  
+
+    This model demonstrates how TikTok trends rise and fall over time.
+    """)
