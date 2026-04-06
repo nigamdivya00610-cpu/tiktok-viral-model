@@ -3,58 +3,46 @@ import numpy as np
 import matplotlib.pyplot as plt
 import networkx as nx
 
-# -----------------------------
-# PAGE CONFIG
-# -----------------------------
+# -------------------------------
+# PAGE SETUP
+# -------------------------------
 st.set_page_config(layout="centered")
 st.title("📊 TikTok Viral Spread Model")
 
-# -----------------------------
-# 📘 THEORY SECTION (ADDED)
-# -----------------------------
-st.markdown("## 📘 Model Overview")
+# -------------------------------
+# 📘 MODEL DESCRIPTION
+# -------------------------------
+st.header("📘 Model Overview")
 
 st.write("""
-This model simulates how a TikTok video spreads in a social network by combining:
-
-- 📈 Growth–Decay dynamics (how content grows and fades)
-- 🕸️ Network structure (how users are connected)
-- 👥 User behavior (viewers, sharers, passive users)
-
-The goal is to understand how videos become viral and what factors influence their reach.
+This model explains how a TikTok video spreads across users using:
+- Growth–Decay mechanism
+- Social network structure
+- User interaction behavior
 """)
 
-st.markdown("### 👥 User Types")
-
+st.subheader("👥 User Categories")
 st.write("""
-- 👀 **Viewers (V):** Users who watch the video  
-- 🔁 **Sharers (S):** Users who share the video and increase reach  
-- 😐 **Passive (P):** Users who lose interest and stop engaging  
+- 👀 Viewers (V): Watch the video  
+- 🔁 Sharers (S): Share the video  
+- 😐 Passive (P): Lose interest  
 """)
 
-st.markdown("### 🧠 Model Equations")
+st.subheader("🧠 Mathematical Model")
+st.latex(r"\frac{dV}{dt} = k \cdot S \cdot \frac{(N - V)}{N} - \delta V")
+st.latex(r"\frac{dS}{dt} = \beta V - \gamma S")
+st.latex(r"\frac{dP}{dt} = \gamma V")
 
-st.latex(r"dV/dt = k \cdot S \cdot (N - V)/N - \delta V")
-st.latex(r"dS/dt = \beta V - \gamma S")
-st.latex(r"dP/dt = \gamma V")
-
-st.write("""
-- **β (beta):** Probability of viewers becoming sharers  
-- **γ (gamma):** Rate at which users lose interest  
-- **δ (delta):** Decay rate of the trend  
-- **k:** Network influence factor  
-""")
-
-# -----------------------------
-# SIDEBAR INPUTS
-# -----------------------------
-st.sidebar.header("🔧 Parameters")
+# -------------------------------
+# ⚙️ INPUT PARAMETERS
+# -------------------------------
+st.sidebar.header("⚙️ Simulation Parameters")
 
 N = st.sidebar.slider("Total Users (N)", 50, 1000, 200)
 
 beta = st.sidebar.slider("β (Viewer → Sharer)", 0.0, 1.0, 0.6)
 gamma = st.sidebar.slider("γ (Viewer → Passive)", 0.0, 1.0, 0.2)
-delta = st.sidebar.slider("δ (Decay)", 0.0, 1.0, 0.1)
+delta = st.sidebar.slider("δ (Decay Rate)", 0.0, 1.0, 0.1)
 k = st.sidebar.slider("k (Network Influence)", 0.1, 2.0, 1.0)
 
 V0 = st.sidebar.number_input("Initial Viewers", value=10)
@@ -65,9 +53,9 @@ T = st.sidebar.slider("Time Steps", 50, 300, 150)
 
 run = st.sidebar.button("▶ Run Simulation")
 
-# -----------------------------
-# SIMULATION FUNCTION
-# -----------------------------
+# -------------------------------
+# 🔁 SIMULATION FUNCTION
+# -------------------------------
 def simulate():
     G = nx.erdos_renyi_graph(N, 0.03)
 
@@ -81,7 +69,6 @@ def simulate():
     P = np.zeros(T)
 
     V[0], S[0], P[0] = V0, S0, P0
-
     dt = 0.1
 
     for t in range(1, T):
@@ -95,109 +82,91 @@ def simulate():
 
     return V, S, P, avg_centrality
 
-# -----------------------------
-# RUN SIMULATION
-# -----------------------------
+# -------------------------------
+# ▶️ RUN & OUTPUT
+# -------------------------------
 if run:
     V, S, P, C = simulate()
 
     peak_views = np.max(V)
     peak_time = np.argmax(V)
 
-    # -----------------------------
-    # RESULTS + INTERPRETATION
-    # -----------------------------
-    st.subheader("📈 Results")
+    # -------- Results --------
+    st.header("📈 Results")
 
     col1, col2, col3 = st.columns(3)
     col1.metric("Peak Views", f"{peak_views:.1f}")
     col2.metric("Peak Time", peak_time)
     col3.metric("Centrality", f"{C:.4f}")
 
-    st.markdown("### 📌 Interpretation")
+    # -------- Interpretation --------
+    st.subheader("📌 Interpretation")
 
     if peak_views > 0.7 * N:
-        st.success("🔥 Highly Viral: Video spreads to most users")
+        st.success("🔥 Highly Viral Spread")
     elif peak_views > 0.4 * N:
-        st.info("📈 Moderate Spread: Good engagement")
+        st.info("📈 Moderate Spread")
     else:
-        st.warning("📉 Low Spread: Limited reach")
+        st.warning("📉 Low Spread")
 
     if beta > gamma:
-        st.write("🚀 Strong sharing behavior")
+        st.write("🚀 Strong sharing activity")
     else:
-        st.write("⚠️ Users becoming passive quickly")
+        st.write("⚠️ Users lose interest quickly")
 
     if delta > 0.3:
-        st.write("⏳ High decay: Trend fades fast")
+        st.write("⏳ High decay rate (short-lived trend)")
 
     if C > 0.02:
-        st.write("🌐 Influencers boosting spread")
+        st.write("🌐 Influencers boost spread")
 
-    # -----------------------------
-    # GRAPH 1: Sharers & Passive
-    # -----------------------------
+    # -------- Graph 1 --------
     st.subheader("🔁 Sharers vs Passive")
 
     fig1, ax1 = plt.subplots(figsize=(5,3))
     ax1.plot(S, label="Sharers")
     ax1.plot(P, label="Passive")
-    ax1.legend()
     ax1.set_title("Sharers vs Passive Over Time")
     ax1.set_xlabel("Time")
     ax1.set_ylabel("Users")
+    ax1.legend()
 
     st.pyplot(fig1)
 
-    # -----------------------------
-    # GRAPH 2: Growth-Decay
-    # -----------------------------
-    st.subheader("📊 Growth-Decay Graph")
+    # -------- Graph 2 --------
+    st.subheader("📊 Growth–Decay Graph")
 
     fig2, ax2 = plt.subplots(figsize=(5,3))
     ax2.plot(V, label="Viewers")
     ax2.plot(S, label="Sharers")
     ax2.plot(P, label="Passive")
-    ax2.legend()
     ax2.set_title("Growth vs Decay Dynamics")
     ax2.set_xlabel("Time")
     ax2.set_ylabel("Users")
+    ax2.legend()
 
     st.pyplot(fig2)
 
-# -----------------------------
-# 🕸️ NETWORK EXPLANATION (ADDED)
-# -----------------------------
-st.markdown("## 🕸️ Network Structure")
+# -------------------------------
+# 🕸️ NETWORK INFO
+# -------------------------------
+st.header("🕸️ Network Structure")
 
 st.write("""
-- Each node represents a user  
-- Each edge represents a connection (followers/friends)  
-- High centrality nodes = influencers  
-- Dense networks → faster spread  
-- Sparse networks → slower spread  
+- Users are connected in a network (graph)
+- Influential users (high centrality) spread content faster
+- Dense connections → fast viral growth
+- Sparse connections → slow spread
 """)
 
-# -----------------------------
-# 🎯 STRATEGIES (ADDED)
-# -----------------------------
-st.markdown("## 🎯 How to Make a Video Go Viral")
+# -------------------------------
+# 🎯 STRATEGIES
+# -------------------------------
+st.header("🎯 Virality Strategies")
 
 st.write("""
-### 🚀 Increase Virality
-- Improve content quality (increase β)
-- Use trending sounds and hashtags
-- Target influencers early
-
-### ⚠️ Reduce Drop-Off
-- Hook viewers in first 3 seconds
-- Maintain engagement throughout
-
-### ⏳ Reduce Decay
-- Post consistently
-- Follow trends
-
-### 🌐 Network Strategy
-- Collaborate with creators
-- Share in communities
+- Increase β → Make content more shareable  
+- Reduce γ → Improve engagement  
+- Lower δ → Keep content relevant longer  
+- Target influencers for faster spread  
 """)
