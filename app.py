@@ -8,7 +8,7 @@ import random
 # PAGE CONFIG
 # -----------------------------
 st.set_page_config(layout="wide")
-st.title("📊 TikTok Viral Spread Model)
+st.title("📊 TikTok Viral Spread Model")
 
 # -----------------------------
 # THEORY + FORMULAS
