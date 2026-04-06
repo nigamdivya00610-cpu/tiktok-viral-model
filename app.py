@@ -10,6 +10,42 @@ st.set_page_config(layout="centered")
 st.title("📊 TikTok Viral Spread Model")
 
 # -----------------------------
+# 📘 THEORY SECTION (ADDED)
+# -----------------------------
+st.markdown("## 📘 Model Overview")
+
+st.write("""
+This model simulates how a TikTok video spreads in a social network by combining:
+
+- 📈 Growth–Decay dynamics (how content grows and fades)
+- 🕸️ Network structure (how users are connected)
+- 👥 User behavior (viewers, sharers, passive users)
+
+The goal is to understand how videos become viral and what factors influence their reach.
+""")
+
+st.markdown("### 👥 User Types")
+
+st.write("""
+- 👀 **Viewers (V):** Users who watch the video  
+- 🔁 **Sharers (S):** Users who share the video and increase reach  
+- 😐 **Passive (P):** Users who lose interest and stop engaging  
+""")
+
+st.markdown("### 🧠 Model Equations")
+
+st.latex(r"dV/dt = k \cdot S \cdot (N - V)/N - \delta V")
+st.latex(r"dS/dt = \beta V - \gamma S")
+st.latex(r"dP/dt = \gamma V")
+
+st.write("""
+- **β (beta):** Probability of viewers becoming sharers  
+- **γ (gamma):** Rate at which users lose interest  
+- **δ (delta):** Decay rate of the trend  
+- **k:** Network influence factor  
+""")
+
+# -----------------------------
 # SIDEBAR INPUTS
 # -----------------------------
 st.sidebar.header("🔧 Parameters")
@@ -128,3 +164,40 @@ if run:
     ax2.set_ylabel("Users")
 
     st.pyplot(fig2)
+
+# -----------------------------
+# 🕸️ NETWORK EXPLANATION (ADDED)
+# -----------------------------
+st.markdown("## 🕸️ Network Structure")
+
+st.write("""
+- Each node represents a user  
+- Each edge represents a connection (followers/friends)  
+- High centrality nodes = influencers  
+- Dense networks → faster spread  
+- Sparse networks → slower spread  
+""")
+
+# -----------------------------
+# 🎯 STRATEGIES (ADDED)
+# -----------------------------
+st.markdown("## 🎯 How to Make a Video Go Viral")
+
+st.write("""
+### 🚀 Increase Virality
+- Improve content quality (increase β)
+- Use trending sounds and hashtags
+- Target influencers early
+
+### ⚠️ Reduce Drop-Off
+- Hook viewers in first 3 seconds
+- Maintain engagement throughout
+
+### ⏳ Reduce Decay
+- Post consistently
+- Follow trends
+
+### 🌐 Network Strategy
+- Collaborate with creators
+- Share in communities
+""")
