@@ -11,26 +11,27 @@ st.set_page_config(layout="wide")
 st.title("📊 TikTok Viral Spread Model")
 
 # -----------------------------
-# THEORY
+# THEORY SECTION
 # -----------------------------
-st.markdown("## Model Overview")
+st.markdown("## 📘 Model Overview")
+
 st.write("""
-This model combines **mathematical growth-decay dynamics** with a **real social network**.
-- Spread happens through connections (neighbors)
-- Influencers accelerate growth
-- Content fades over time (decay)
+This model simulates how a TikTok video spreads using:
+- Mathematical growth-decay dynamics
+- Real social network structure
+- User interaction behavior
 """)
 
 st.markdown("### 🧠 Mathematical Model")
+
 st.latex(r"\frac{dV}{dt} = \beta S \cdot \frac{(N - V)}{N} - \delta V")
 st.latex(r"\frac{dS}{dt} = \beta V - \gamma S")
 st.latex(r"\frac{dP}{dt} = \gamma V")
 
 st.write("""
-### Meaning:
 - β → Share probability  
-- γ → Users becoming passive  
-- δ → Content decay  
+- γ → Passive rate  
+- δ → Decay rate  
 - N → Total users  
 """)
 
@@ -55,30 +56,27 @@ run = st.sidebar.button("▶ Run Simulation")
 def create_custom_network():
     G = nx.Graph()
 
-    # Fixed nodes (1–13)
-    nodes = list(range(1, 14))
-    G.add_nodes_from(nodes)
-
-    # Fixed edges (similar structure)
     edges = [
-        (1,2),(2,11),(2,9),(2,4),
-        (4,6),(6,7),(7,5),(7,13),
-        (6,3),(6,12),(6,8),(8,10)
+        (1,2),(2,11),(2,9),(1,2),
+        (4,9),(4,6),
+        (6,7),(7,5),(7,13),
+        (6,12),(6,3),
+        (6,8),(8,10)
     ]
-    G.add_edges_from(edges)
 
+    G.add_edges_from(edges)
     return G
 
 # -----------------------------
-# SIMULATION
+# SIMULATION FUNCTION
 # -----------------------------
 def simulate_network():
     G = create_custom_network()
 
-    state = {node: 0 for node in G.nodes()}  # 0 viewer,1 sharer,2 passive
+    state = {node: 0 for node in G.nodes()}  # 0=viewer,1=sharer,2=passive
 
-    initial = random.sample(list(G.nodes()), initial_sharers)
-    for node in initial:
+    initial_nodes = random.sample(list(G.nodes()), initial_sharers)
+    for node in initial_nodes:
         state[node] = 1
 
     V, S, P = [], [], []
@@ -88,9 +86,9 @@ def simulate_network():
 
         for node in G.nodes():
             if state[node] == 1:
-                for n in G.neighbors(node):
-                    if state[n] == 0 and random.random() < beta:
-                        new_state[n] = 1
+                for neighbor in G.neighbors(node):
+                    if state[neighbor] == 0 and random.random() < beta:
+                        new_state[neighbor] = 1
 
                 if random.random() < gamma:
                     new_state[node] = 2
@@ -108,27 +106,27 @@ def simulate_network():
     return V, S, P, G, state
 
 # -----------------------------
-# RUN
+# RUN SIMULATION
 # -----------------------------
 if run:
     V, S, P, G, state = simulate_network()
 
     peak_views = max(V)
-    peak_time = np.argmax(V)
+    peak_time = int(np.argmax(V))
     final_sharers = S[-1]
 
     virality_score = (peak_views / len(G.nodes())) * beta * (1 - gamma)
     spread_speed = peak_views / (peak_time + 1)
 
     # -----------------------------
-    # METRICS
+    # RESULTS
     # -----------------------------
     st.subheader("📈 Key Metrics")
 
     col1, col2, col3, col4 = st.columns(4)
-    col1.metric("Total Users", len(G.nodes()))
-    col2.metric("Peak Viewers", peak_views)
-    col3.metric("Peak Time", peak_time)
+    col1.metric("Peak Viewers", peak_views)
+    col2.metric("Peak Time", peak_time)
+    col3.metric("Final Sharers", final_sharers)
     col4.metric("Virality Score", f"{virality_score:.2f}")
 
     # -----------------------------
@@ -137,33 +135,37 @@ if run:
     st.markdown("## 📌 Interpretation")
 
     if beta > gamma:
-        st.success("🚀 Strong sharing → viral growth likely")
+        st.success("🚀 Strong sharing dominates (β > γ)")
+    elif gamma > beta:
+        st.warning("⚠️ Users become passive quickly (γ > β)")
     else:
-        st.warning("⚠️ High drop-off → weak spread")
+        st.info("⚖️ Balanced sharing")
 
     if delta > 0.3:
-        st.warning("⏳ High decay → short trend")
+        st.warning("⏳ High decay")
+    else:
+        st.info("📉 Controlled decay")
 
     if peak_views > 0.7 * len(G.nodes()):
         st.success("🔥 Highly Viral")
     else:
-        st.info("📉 Limited Spread")
+        st.info("📊 Moderate / Low Spread")
 
     # -----------------------------
     # SINGLE GRAPH
     # -----------------------------
     st.subheader("📊 Spread Dynamics")
 
-    fig, ax = plt.subplots(figsize=(7,4))
+    fig, ax = plt.subplots(figsize=(8,5))
     ax.plot(V, label="Viewers")
     ax.plot(S, label="Sharers")
     ax.plot(P, label="Passive")
+    ax.set_title("Growth-Decay Dynamics")
     ax.legend()
-    ax.set_title("Growth-Decay Curve")
     st.pyplot(fig)
 
     # -----------------------------
-    # NETWORK VISUALIZATION
+    # NETWORK VISUALIZATION (WITH NUMBERS)
     # -----------------------------
     st.subheader("🕸️ Network Structure")
 
@@ -171,20 +173,18 @@ if run:
 
     pos = nx.spring_layout(G, seed=42)
 
-    colors = []
-    for node in G.nodes():
-        if state[node] == 1:
-            colors.append("red")
-        elif state[node] == 2:
-            colors.append("gray")
-        else:
-            colors.append("lightgreen")
+    colors = [
+        "red" if state[n] == 1 else
+        "gray" if state[n] == 2 else
+        "green"
+        for n in G.nodes()
+    ]
 
     nx.draw(
         G, pos,
-        with_labels=True,   # ✅ show numbers
         node_color=colors,
         node_size=800,
+        with_labels=True,   # 🔥 THIS SHOWS NUMBERS
         font_size=10,
         ax=ax_net
     )
@@ -194,11 +194,11 @@ if run:
     # -----------------------------
     # STRATEGY
     # -----------------------------
-    st.markdown("## 🎯 Strategy Based on Model")
+    st.markdown("## 🎯 Strategy")
 
     st.write("""
-- Increase β → Boost sharing  
-- Reduce γ → Improve retention  
-- Reduce δ → Slow decay  
-- Target key nodes → Faster spread  
+- Increase β → More sharing → faster spread  
+- Reduce γ → Better retention  
+- Reduce δ → Slower decay  
+- Use influencers → increases effective spread rate
 """)
