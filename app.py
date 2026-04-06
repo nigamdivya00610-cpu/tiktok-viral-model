@@ -120,24 +120,47 @@ if run:
     # -----------------------------
     # INTERPRETATION LINKED TO FORMULAS
     # -----------------------------
-    st.markdown("## 📌 Interpretation (Based on Model Equations)")
+   st.markdown("## 📌 Interpretation (Based on Model Equations)")
 
-    if beta > gamma:
-        st.write("🚀 From dS/dt = βV - γS → Growth dominates → More sharers created")
+# -----------------------------
+# Sharing vs Passive Behavior
+# -----------------------------
+if beta > gamma:
+    st.success("🚀 Strong Sharing Dynamics: β > γ → More users become sharers than passive users (growth dominates in dS/dt).")
+elif gamma > beta:
+    st.warning("⚠️ High Drop-off Rate: γ > β → Users become passive faster than they share (decline in dS/dt).")
+else:
+    st.info("⚖️ Balanced Behavior: β ≈ γ → Sharing and drop-off are nearly equal.")
 
-    if gamma > beta:
-        st.write("⚠️ From dS/dt → Users become passive faster than sharing")
+# -----------------------------
+# Decay Effect
+# -----------------------------
+if delta > 0.3:
+    st.warning("⏳ High Content Decay: Large δ reduces viewers quickly (negative impact in dV/dt).")
+elif delta < 0.1:
+    st.success("🌱 Low Decay: Content remains relevant for longer, sustaining viewer growth.")
+else:
+    st.info("📉 Moderate Decay: Content loses relevance at a steady rate.")
 
-    if delta > 0.3:
-        st.write("⏳ From dV/dt → High decay reduces viewers quickly")
+# -----------------------------
+# Virality Level
+# -----------------------------
+if peak_views > 0.7 * N:
+    st.success("🔥 Highly Viral: Strong growth term in dV/dt spreads content across most of the network.")
+elif peak_views > 0.4 * N:
+    st.info("📈 Moderate Virality: Content reaches a fair portion of users.")
+else:
+    st.error("📉 Low Virality: Weak growth term limits spread.")
 
-    if peak_views > 0.7 * N:
-        st.success("🔥 Strong growth term in dV/dt → Viral spread achieved")
-    elif peak_views < 0.4 * N:
-        st.warning("📉 Weak growth → Spread limited")
-
-    if spread_speed > 5:
-        st.write("⚡ High initial dV/dt → Rapid viral growth")
+# -----------------------------
+# Spread Speed
+# -----------------------------
+if spread_speed > 5:
+    st.success("⚡ Fast Spread: High initial growth (dV/dt) → rapid viral expansion.")
+elif spread_speed > 2:
+    st.info("🚶 Moderate Spread Speed: Gradual increase in viewers.")
+else:
+    st.warning("🐢 Slow Spread: Weak initial growth, limited early momentum.")
 
     # -----------------------------
     # GRAPHS
