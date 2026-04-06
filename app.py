@@ -7,7 +7,7 @@ import random
 # -----------------------------
 # PAGE CONFIG
 # -----------------------------
-st.set_page_config(layout="centered")
+st.set_page_config(layout="wide")
 st.title("📊 TikTok Viral Spread Model (Network-Based)")
 
 # -----------------------------
