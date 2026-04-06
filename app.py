@@ -8,7 +8,7 @@ import random
 # PAGE CONFIG
 # -----------------------------
 st.set_page_config(layout="wide")
-st.title("TikTok Viral Spread Model")
+st.title("📊 TikTok Viral Spread Model")
 
 # -----------------------------
 # THEORY
@@ -35,10 +35,11 @@ st.write("""
 """)
 
 # -----------------------------
-# SIDEBAR
+# SIDEBAR INPUTS
 # -----------------------------
 st.sidebar.header("🔧 Parameters")
 
+N = st.sidebar.slider("Total Users (N)", 10, 100, 13)
 beta = st.sidebar.slider("β (Share Probability)", 0.0, 1.0, 0.5)
 gamma = st.sidebar.slider("γ (Passive Rate)", 0.0, 1.0, 0.2)
 delta = st.sidebar.slider("δ (Decay)", 0.0, 1.0, 0.1)
@@ -51,23 +52,30 @@ run = st.sidebar.button("▶ Run Simulation")
 # -----------------------------
 # CUSTOM NETWORK (LIKE IMAGE)
 # -----------------------------
-def create_fixed_network():
+def create_custom_network():
     G = nx.Graph()
 
+    # Fixed nodes (1–13)
+    nodes = list(range(1, 14))
+    G.add_nodes_from(nodes)
+
+    # Fixed edges (similar structure)
     edges = [
         (1,2),(2,11),(2,9),(2,4),
         (4,6),(6,7),(7,5),(7,13),
-        (6,12),(6,3),(6,8),(8,10)
+        (6,3),(6,12),(6,8),(8,10)
     ]
-
     G.add_edges_from(edges)
+
     return G
 
 # -----------------------------
 # SIMULATION
 # -----------------------------
-def simulate_network(G):
-    state = {node: 0 for node in G.nodes()}  # 0=viewer,1=sharer,2=passive
+def simulate_network():
+    G = create_custom_network()
+
+    state = {node: 0 for node in G.nodes()}  # 0 viewer,1 sharer,2 passive
 
     initial = random.sample(list(G.nodes()), initial_sharers)
     for node in initial:
@@ -97,21 +105,19 @@ def simulate_network(G):
         S.append(list(state.values()).count(1))
         P.append(list(state.values()).count(2))
 
-    return V, S, P, state
+    return V, S, P, G, state
 
 # -----------------------------
 # RUN
 # -----------------------------
 if run:
-    G = create_fixed_network()
-    V, S, P, state = simulate_network(G)
+    V, S, P, G, state = simulate_network()
 
-    N = len(G.nodes())
     peak_views = max(V)
     peak_time = np.argmax(V)
     final_sharers = S[-1]
 
-    virality_score = (peak_views / N) * beta * (1 - gamma)
+    virality_score = (peak_views / len(G.nodes())) * beta * (1 - gamma)
     spread_speed = peak_views / (peak_time + 1)
 
     # -----------------------------
@@ -120,33 +126,28 @@ if run:
     st.subheader("📈 Key Metrics")
 
     col1, col2, col3, col4 = st.columns(4)
-    col1.metric("Peak Viewers", peak_views)
-    col2.metric("Peak Time", peak_time)
-    col3.metric("Final Sharers", final_sharers)
+    col1.metric("Total Users", len(G.nodes()))
+    col2.metric("Peak Viewers", peak_views)
+    col3.metric("Peak Time", peak_time)
     col4.metric("Virality Score", f"{virality_score:.2f}")
 
     # -----------------------------
     # INTERPRETATION
     # -----------------------------
-    st.markdown("## 📌 Interpretation (Based on Model Equations)")
+    st.markdown("## 📌 Interpretation")
 
     if beta > gamma:
-        st.success("🚀 Strong sharing dominates (β > γ)")
-    elif gamma > beta:
-        st.warning("⚠️ Users become passive faster (γ > β)")
+        st.success("🚀 Strong sharing → viral growth likely")
     else:
-        st.info("⚖️ Balanced behavior")
+        st.warning("⚠️ High drop-off → weak spread")
 
     if delta > 0.3:
-        st.warning("⏳ High decay → content fades quickly")
+        st.warning("⏳ High decay → short trend")
 
-    if peak_views > 0.7 * N:
+    if peak_views > 0.7 * len(G.nodes()):
         st.success("🔥 Highly Viral")
-    elif peak_views < 0.4 * N:
-        st.warning("📉 Low Spread")
-
-    if spread_speed > 5:
-        st.success("⚡ Fast Spread")
+    else:
+        st.info("📉 Limited Spread")
 
     # -----------------------------
     # SINGLE GRAPH
@@ -157,28 +158,37 @@ if run:
     ax.plot(V, label="Viewers")
     ax.plot(S, label="Sharers")
     ax.plot(P, label="Passive")
-    ax.set_title("Growth-Decay")
     ax.legend()
+    ax.set_title("Growth-Decay Curve")
     st.pyplot(fig)
 
     # -----------------------------
-    # CUSTOM NETWORK VISUALIZATION
+    # NETWORK VISUALIZATION
     # -----------------------------
     st.subheader("🕸️ Network Structure")
+
+    fig_net, ax_net = plt.subplots(figsize=(6,4))
 
     pos = nx.spring_layout(G, seed=42)
 
     colors = []
     for node in G.nodes():
         if state[node] == 1:
-            colors.append("purple")   # sharer
+            colors.append("red")
         elif state[node] == 2:
-            colors.append("green")    # passive
+            colors.append("gray")
         else:
-            colors.append("yellow")   # viewer
+            colors.append("lightgreen")
 
-    fig_net, ax_net = plt.subplots(figsize=(6,4))
-    nx.draw(G, pos, with_labels=True, node_color=colors, node_size=800, ax=ax_net)
+    nx.draw(
+        G, pos,
+        with_labels=True,   # ✅ show numbers
+        node_color=colors,
+        node_size=800,
+        font_size=10,
+        ax=ax_net
+    )
+
     st.pyplot(fig_net)
 
     # -----------------------------
@@ -187,8 +197,8 @@ if run:
     st.markdown("## 🎯 Strategy Based on Model")
 
     st.write("""
-- Increase β → Boost sharing → increases dS/dt
-- Reduce γ → Retain users → fewer passive users
-- Reduce δ → Slow decay → sustain dV/dt
-- Use influencers → increases effective spread rate
+- Increase β → Boost sharing  
+- Reduce γ → Improve retention  
+- Reduce δ → Slow decay  
+- Target key nodes → Faster spread  
 """)
