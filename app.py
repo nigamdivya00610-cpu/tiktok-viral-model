@@ -41,7 +41,7 @@ st.write("""
 # -----------------------------
 st.sidebar.header("🔧 Parameters")
 
-N = st.sidebar.slider("Total Users (N)", 50, 500, 150)
+N = st.sidebar.slider("Total Users (N)", 10, 100, 20)
 beta = st.sidebar.slider("β (Share Probability)", 0.0, 1.0, 0.5)
 gamma = st.sidebar.slider("γ (Passive Rate)", 0.0, 1.0, 0.2)
 delta = st.sidebar.slider("δ (Decay)", 0.0, 1.0, 0.1)
