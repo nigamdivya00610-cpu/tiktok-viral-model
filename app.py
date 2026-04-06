@@ -172,3 +172,30 @@ if run:
 
     nx.draw(G, pos, node_color=colors, node_size=40, ax=ax_net)
     st.pyplot(fig_net)
+st.markdown("### 📌 Interpretation")
+
+# Virality level
+if peak_views > 0.7 * N:
+    st.success("🔥 The video achieves high virality, reaching a large portion of the network.")
+elif peak_views > 0.4 * N:
+    st.info("📈 The video shows moderate spread with decent audience engagement.")
+else:
+    st.warning("📉 The video has limited reach and fails to spread widely.")
+
+# Sharing vs passive behavior
+if beta > gamma:
+    st.write("🚀 Sharing dominates user behavior, leading to faster and wider spread.")
+else:
+    st.write("⚠️ Users lose interest quickly, limiting the spread of the video.")
+
+# Decay effect
+if delta > 0.3:
+    st.write("⏳ High decay rate indicates the trend fades quickly over time.")
+else:
+    st.write("✅ Low decay helps the content remain relevant for a longer duration.")
+
+# Network effect
+if S[-1] > 0:
+    st.write("🌐 Network connections support continued sharing activity.")
+else:
+    st.write("⚠️ Sharing dies out early, reducing long-term reach.")
