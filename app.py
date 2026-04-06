@@ -11,16 +11,15 @@ st.set_page_config(layout="wide")
 st.title("📊 TikTok Viral Spread Model")
 
 # -----------------------------
-# THEORY + FORMULAS
+# THEORY SECTION
 # -----------------------------
 st.markdown("## 📘 Model Overview")
 
 st.write("""
-This model combines **mathematical growth-decay dynamics** with a **real social network**.
-
-- Spread happens through connections (neighbors)
-- Influencers accelerate growth
-- Content fades over time (decay)
+This model simulates how a TikTok video spreads using:
+- Mathematical growth-decay dynamics
+- Real social network structure
+- User interaction behavior
 """)
 
 st.markdown("### 🧠 Mathematical Model")
@@ -30,10 +29,9 @@ st.latex(r"\frac{dS}{dt} = \beta V - \gamma S")
 st.latex(r"\frac{dP}{dt} = \gamma V")
 
 st.write("""
-### 🔍 Meaning:
 - β → Share probability  
-- γ → Users becoming passive  
-- δ → Content decay  
+- γ → Passive rate  
+- δ → Decay rate  
 - N → Total users  
 """)
 
@@ -55,13 +53,15 @@ run = st.sidebar.button("▶ Run Simulation")
 # -----------------------------
 # SIMULATION FUNCTION
 # -----------------------------
-def simulate_network():
+def simulate_network(N, beta, gamma, delta, T, initial_sharers):
     G = nx.barabasi_albert_graph(N, 3)
 
-    state = {node: 0 for node in G.nodes()}  # 0=viewer,1=sharer,2=passive
+    # 0=viewer, 1=sharer, 2=passive
+    state = {node: 0 for node in G.nodes()}
 
-    initial = random.sample(list(G.nodes()), initial_sharers)
-    for node in initial:
+    # Initialize sharers
+    initial_nodes = random.sample(list(G.nodes()), initial_sharers)
+    for node in initial_nodes:
         state[node] = 1
 
     V, S, P = [], [], []
@@ -71,18 +71,16 @@ def simulate_network():
 
         for node in G.nodes():
             if state[node] == 1:
-                for n in G.neighbors(node):
-                    if state[n] == 0:
-                        if random.random() < beta:
-                            new_state[n] = 1
+                for neighbor in G.neighbors(node):
+                    if state[neighbor] == 0 and random.random() < beta:
+                        new_state[neighbor] = 1
 
                 if random.random() < gamma:
                     new_state[node] = 2
 
         for node in G.nodes():
-            if state[node] == 0:
-                if random.random() < delta:
-                    new_state[node] = 2
+            if state[node] == 0 and random.random() < delta:
+                new_state[node] = 2
 
         state = new_state
 
@@ -93,16 +91,16 @@ def simulate_network():
     return V, S, P, G, state
 
 # -----------------------------
-# RUN
+# RUN SIMULATION
 # -----------------------------
 if run:
-    V, S, P, G, state = simulate_network()
+    V, S, P, G, state = simulate_network(N, beta, gamma, delta, T, initial_sharers)
 
+    # Metrics
     peak_views = max(V)
-    peak_time = np.argmax(V)
+    peak_time = int(np.argmax(V))
     final_sharers = S[-1]
 
-    # Derived metrics
     virality_score = (peak_views / N) * beta * (1 - gamma)
     spread_speed = peak_views / (peak_time + 1)
 
@@ -118,49 +116,41 @@ if run:
     col4.metric("Virality Score", f"{virality_score:.2f}")
 
     # -----------------------------
-    # INTERPRETATION LINKED TO FORMULAS
+    # INTERPRETATION
     # -----------------------------
-   st.markdown("## 📌 Interpretation (Based on Model Equations)")
+    st.markdown("## 📌 Interpretation")
 
-# -----------------------------
-# Sharing vs Passive Behavior
-# -----------------------------
-if beta > gamma:
-    st.success("🚀 Strong Sharing Dynamics: β > γ → More users become sharers than passive users (growth dominates in dS/dt).")
-elif gamma > beta:
-    st.warning("⚠️ High Drop-off Rate: γ > β → Users become passive faster than they share (decline in dS/dt).")
-else:
-    st.info("⚖️ Balanced Behavior: β ≈ γ → Sharing and drop-off are nearly equal.")
+    # Sharing dynamics
+    if beta > gamma:
+        st.success("🚀 Strong sharing dominates (β > γ)")
+    elif gamma > beta:
+        st.warning("⚠️ Users become passive quickly (γ > β)")
+    else:
+        st.info("⚖️ Balanced sharing and drop-off")
 
-# -----------------------------
-# Decay Effect
-# -----------------------------
-if delta > 0.3:
-    st.warning("⏳ High Content Decay: Large δ reduces viewers quickly (negative impact in dV/dt).")
-elif delta < 0.1:
-    st.success("🌱 Low Decay: Content remains relevant for longer, sustaining viewer growth.")
-else:
-    st.info("📉 Moderate Decay: Content loses relevance at a steady rate.")
+    # Decay
+    if delta > 0.3:
+        st.warning("⏳ High decay → trend fades quickly")
+    elif delta < 0.1:
+        st.success("🌱 Low decay → content stays relevant")
+    else:
+        st.info("📉 Moderate decay")
 
-# -----------------------------
-# Virality Level
-# -----------------------------
-if peak_views > 0.7 * N:
-    st.success("🔥 Highly Viral: Strong growth term in dV/dt spreads content across most of the network.")
-elif peak_views > 0.4 * N:
-    st.info("📈 Moderate Virality: Content reaches a fair portion of users.")
-else:
-    st.error("📉 Low Virality: Weak growth term limits spread.")
+    # Virality
+    if peak_views > 0.7 * N:
+        st.success("🔥 Highly Viral")
+    elif peak_views > 0.4 * N:
+        st.info("📈 Moderate Spread")
+    else:
+        st.error("📉 Low Spread")
 
-# -----------------------------
-# Spread Speed
-# -----------------------------
-if spread_speed > 5:
-    st.success("⚡ Fast Spread: High initial growth (dV/dt) → rapid viral expansion.")
-elif spread_speed > 2:
-    st.info("🚶 Moderate Spread Speed: Gradual increase in viewers.")
-else:
-    st.warning("🐢 Slow Spread: Weak initial growth, limited early momentum.")
+    # Speed
+    if spread_speed > 5:
+        st.success("⚡ Fast Spread")
+    elif spread_speed > 2:
+        st.info("🚶 Moderate Speed")
+    else:
+        st.warning("🐢 Slow Spread")
 
     # -----------------------------
     # GRAPHS
@@ -173,8 +163,8 @@ else:
         fig1, ax1 = plt.subplots(figsize=(6,4))
         ax1.plot(S, label="Sharers")
         ax1.plot(P, label="Passive")
-        ax1.legend()
         ax1.set_title("Sharers vs Passive")
+        ax1.legend()
         st.pyplot(fig1)
 
     with colB:
@@ -182,8 +172,8 @@ else:
         ax2.plot(V, label="Viewers")
         ax2.plot(S, label="Sharers")
         ax2.plot(P, label="Passive")
-        ax2.legend()
         ax2.set_title("Growth-Decay")
+        ax2.legend()
         st.pyplot(fig2)
 
     # -----------------------------
@@ -194,26 +184,24 @@ else:
     fig_net, ax_net = plt.subplots(figsize=(6,4))
     pos = nx.spring_layout(G, seed=42)
 
-    colors = []
-    for node in G.nodes():
-        if state[node] == 1:
-            colors.append("red")
-        elif state[node] == 2:
-            colors.append("gray")
-        else:
-            colors.append("blue")
+    colors = [
+        "red" if state[n] == 1 else
+        "gray" if state[n] == 2 else
+        "blue"
+        for n in G.nodes()
+    ]
 
     nx.draw(G, pos, node_color=colors, node_size=50, ax=ax_net)
     st.pyplot(fig_net)
 
     # -----------------------------
-    # STRATEGY (CONNECTED TO FORMULAS)
+    # STRATEGY
     # -----------------------------
-    st.markdown("## 🎯 Strategy Based on Model")
+    st.markdown("## 🎯 Strategy")
 
     st.write("""
-- Increase β → Boost sharing → increases dS/dt
-- Reduce γ → Retain users → fewer passive users
-- Reduce δ → Slow decay → sustain dV/dt
-- Use influencers → increases effective spread rate
+- Increase β → More sharing → faster spread  
+- Reduce γ → Better retention  
+- Reduce δ → Slower decay  
+- Target influencers → maximize reach  
 """)
