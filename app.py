@@ -54,7 +54,7 @@ run = st.sidebar.button("▶ Run Simulation")
 # SIMULATION FUNCTION
 # -----------------------------
 def simulate_network(N, beta, gamma, delta, T, initial_sharers):
-    G = nx.barabasi_albert_graph(N, 3)
+    G = create_custom_network()
 
     # 0=viewer, 1=sharer, 2=passive
     state = {node: 0 for node in G.nodes()}
